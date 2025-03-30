@@ -1,12 +1,12 @@
 // @ts-nocheck
 'use client';
 
-// @ts-ignore - React types are properly available at runtime
+// @ts-expect-error - React types are properly available at runtime
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { analyzeData, AnalysisResult, DataInsight, DataColumn } from '@/lib/analysis/dataUtils';
-// @ts-ignore - Recharts types are properly available at runtime
+// @ts-expect-error - Recharts types are properly available at runtime
 import {
   BarChart, 
   Bar, 
@@ -21,7 +21,6 @@ import {
   Legend, 
   ResponsiveContainer,
   Area,
-  AreaChart,
   ComposedChart
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,8 +29,6 @@ import { Upload, Download, FileText, AlertTriangle, Info } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import DataExplorer from './DataExplorer';
 import MultiView from './MultiView';
-
-interface DataAnalyzerProps extends Record<string, never> {}
 
 export default function DataAnalyzer(): React.ReactElement {
   const [file, setFile] = useState<File | null>(null);
