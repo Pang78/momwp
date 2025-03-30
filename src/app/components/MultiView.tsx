@@ -147,8 +147,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
   const visibleViews = views.slice(0, getVisibleViewsCount());
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="w-full space-y-4">
+      <div className="flex justify-between items-center mb-4">
         <div className="font-medium">Multi-View Data Explorer</div>
         <div className="flex gap-2">
           <Button 
@@ -188,7 +188,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
 
       {expandedView ? (
         // Expanded single view
-        <Card className="w-full">
+        <Card className="w-full overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg">

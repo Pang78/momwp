@@ -379,147 +379,155 @@ export default function DataExplorer({
     switch (chartType) {
       case 'bar':
         return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xAxis} />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => [value, name]}
-                labelFormatter={(label) => `${xAxis}: ${label}`}
-              />
-              <Legend />
-              {groupBy && groupBy !== 'none' ? (
-                // If grouped, we need separate bars for each group
-                Object.keys(chartData[0] || {})
-                  .filter(key => key !== xAxis && key !== '_original')
-                  .map((key, index) => (
-                    <Bar 
-                      key={`bar-group-${index}-${key.replace(/\W/g, '')}`}
-                      dataKey={key} 
-                      fill={COLORS[index % COLORS.length]} 
-                      name={key}
-                    />
-                  ))
-              ) : (
-                // Simple bar chart
-                <Bar 
-                  key={`bar-simple-${yAxis.replace(/\W/g, '')}`}
-                  dataKey={yAxis} 
-                  fill={COLORS[0]} 
-                  name={yAxis} 
+          <div className="w-full h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey={xAxis} />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [value, name]}
+                  labelFormatter={(label) => `${xAxis}: ${label}`}
                 />
-              )}
-            </BarChart>
-          </ResponsiveContainer>
+                <Legend />
+                {groupBy && groupBy !== 'none' ? (
+                  // If grouped, we need separate bars for each group
+                  Object.keys(chartData[0] || {})
+                    .filter(key => key !== xAxis && key !== '_original')
+                    .map((key, index) => (
+                      <Bar 
+                        key={`bar-group-${index}-${key.replace(/\W/g, '')}`}
+                        dataKey={key} 
+                        fill={COLORS[index % COLORS.length]} 
+                        name={key}
+                      />
+                    ))
+                ) : (
+                  // Simple bar chart
+                  <Bar 
+                    key={`bar-simple-${yAxis.replace(/\W/g, '')}`}
+                    dataKey={yAxis} 
+                    fill={COLORS[0]} 
+                    name={yAxis} 
+                  />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         );
         
       case 'line':
         return (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xAxis} />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => [value, name]}
-                labelFormatter={(label) => `${xAxis}: ${label}`}
-              />
-              <Legend />
-              {groupBy && groupBy !== 'none' ? (
-                // If grouped, we need separate lines for each group
-                Object.keys(chartData[0] || {})
-                  .filter(key => key !== xAxis && key !== '_original')
-                  .map((key, index) => (
-                    <Line 
-                      key={`line-group-${index}-${key.replace(/\W/g, '')}`}
-                      type="monotone" 
-                      dataKey={key} 
-                      stroke={COLORS[index % COLORS.length]} 
-                      name={key}
-                      activeDot={{ r: 8 }}
-                    />
-                  ))
-              ) : (
-                // Simple line chart
-                <Line 
-                  key={`line-simple-${yAxis.replace(/\W/g, '')}`}
-                  type="monotone" 
-                  dataKey={yAxis} 
-                  stroke={COLORS[0]} 
-                  name={yAxis}
-                  activeDot={{ r: 8 }}
+          <div className="w-full h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey={xAxis} />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [value, name]}
+                  labelFormatter={(label) => `${xAxis}: ${label}`}
                 />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+                <Legend />
+                {groupBy && groupBy !== 'none' ? (
+                  // If grouped, we need separate lines for each group
+                  Object.keys(chartData[0] || {})
+                    .filter(key => key !== xAxis && key !== '_original')
+                    .map((key, index) => (
+                      <Line 
+                        key={`line-group-${index}-${key.replace(/\W/g, '')}`}
+                        type="monotone" 
+                        dataKey={key} 
+                        stroke={COLORS[index % COLORS.length]} 
+                        name={key}
+                        activeDot={{ r: 8 }}
+                      />
+                    ))
+                ) : (
+                  // Simple line chart
+                  <Line 
+                    key={`line-simple-${yAxis.replace(/\W/g, '')}`}
+                    type="monotone" 
+                    dataKey={yAxis} 
+                    stroke={COLORS[0]} 
+                    name={yAxis}
+                    activeDot={{ r: 8 }}
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         );
         
       case 'scatter':
         return (
-          <ResponsiveContainer width="100%" height={400}>
-            <ScatterChart>
-              <CartesianGrid />
-              <XAxis 
-                type="number" 
-                dataKey={xAxis} 
-                name={xAxis} 
-              />
-              <YAxis 
-                type="number" 
-                dataKey={yAxis} 
-                name={yAxis} 
-              />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Legend />
-              {groupBy && groupBy !== 'none' ? (
-                // If grouped, we need separate scatter plots for each group
-                Object.keys(chartData[0] || {})
-                  .filter(key => key !== xAxis && key !== '_original')
-                  .map((key, index) => (
-                    <Scatter 
-                      key={`scatter-group-${index}-${key.replace(/\W/g, '')}`}
-                      name={key} 
-                      data={chartData.filter(item => item[key] !== undefined)} 
-                      fill={COLORS[index % COLORS.length]} 
-                    />
-                  ))
-              ) : (
-                // Simple scatter plot
-                <Scatter 
-                  key={`scatter-simple-${yAxis.replace(/\W/g, '')}`}
-                  name={yAxis} 
-                  data={chartData} 
-                  fill={COLORS[0]} 
+          <div className="w-full h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart>
+                <CartesianGrid />
+                <XAxis 
+                  type="number" 
+                  dataKey={xAxis} 
+                  name={xAxis} 
                 />
-              )}
-            </ScatterChart>
-          </ResponsiveContainer>
+                <YAxis 
+                  type="number" 
+                  dataKey={yAxis} 
+                  name={yAxis} 
+                />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                <Legend />
+                {groupBy && groupBy !== 'none' ? (
+                  // If grouped, we need separate scatter plots for each group
+                  Object.keys(chartData[0] || {})
+                    .filter(key => key !== xAxis && key !== '_original')
+                    .map((key, index) => (
+                      <Scatter 
+                        key={`scatter-group-${index}-${key.replace(/\W/g, '')}`}
+                        name={key} 
+                        data={chartData.filter(item => item[key] !== undefined)} 
+                        fill={COLORS[index % COLORS.length]} 
+                      />
+                    ))
+                ) : (
+                  // Simple scatter plot
+                  <Scatter 
+                    key={`scatter-simple-${yAxis.replace(/\W/g, '')}`}
+                    name={yAxis} 
+                    data={chartData} 
+                    fill={COLORS[0]} 
+                  />
+                )}
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
         );
         
       case 'pie':
         return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={true}
-                outerRadius={150}
-                fill="#8884d8"
-                dataKey="value"
-                nameKey="name"
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={150}
+                  fill="#8884d8"
+                  dataKey="value"
+                  nameKey="name"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         );
         
       default:
@@ -593,9 +601,9 @@ export default function DataExplorer({
   ]);
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
+    <div className="w-full space-y-4">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>Data Explorer</CardTitle>
@@ -614,11 +622,11 @@ export default function DataExplorer({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <CardContent className="pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Left sidebar with controls - only show if showControls is true */}
             {showControls && (
-              <div className="md:col-span-3 space-y-4">
+              <div className="md:col-span-3 space-y-4 overflow-hidden">
                 <div className="space-y-2">
                   <Label>Chart Type</Label>
                   <ToggleGroup type="single" value={chartType} onValueChange={(value) => value && setChartType(value as ChartType)}>
@@ -733,7 +741,7 @@ export default function DataExplorer({
                       No filters applied
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                       {filters.map(filter => (
                         <div key={filter.id} className="space-y-2 p-2 border rounded-md">
                           <div className="flex justify-between items-center">
@@ -742,6 +750,7 @@ export default function DataExplorer({
                               variant="ghost" 
                               size="sm" 
                               onClick={() => removeFilter(filter.id)}
+                              className="h-6 w-6 p-0"
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -750,7 +759,7 @@ export default function DataExplorer({
                             value={filter.column}
                             onValueChange={(value) => updateFilter(filter.id, { column: value })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -769,7 +778,7 @@ export default function DataExplorer({
                               operator: value as FilterOperator 
                             })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -788,6 +797,7 @@ export default function DataExplorer({
                               value: e.target.value 
                             })}
                             placeholder="Value"
+                            className="h-8"
                           />
 
                           {filter.operator === 'between' && (
@@ -799,6 +809,7 @@ export default function DataExplorer({
                                   value2: e.target.value 
                                 })}
                                 placeholder="Upper bound"
+                                className="h-8"
                               />
                             </>
                           )}
@@ -821,7 +832,7 @@ export default function DataExplorer({
                   </div>
 
                   <div className="pt-2">
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="whitespace-nowrap">
                       {dataPointCount} data points
                     </Badge>
                   </div>
@@ -830,19 +841,21 @@ export default function DataExplorer({
             )}
 
             {/* Main chart area - adjust cols based on whether controls are shown */}
-            <div className={`md:col-span-${showControls ? '9' : '12'}`}>
-              <Tabs defaultValue="chart">
+            <div className={`md:col-span-${showControls ? '9' : '12'} w-full overflow-hidden`}>
+              <Tabs defaultValue="chart" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="chart">Chart</TabsTrigger>
                   <TabsTrigger value="data">Data Table</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="chart">
-                  {renderChart()}
+                <TabsContent value="chart" className="w-full">
+                  <div className="w-full">
+                    {renderChart()}
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="data">
-                  <div className="border rounded-md overflow-auto max-h-[400px]">
+                <TabsContent value="data" className="w-full">
+                  <div className="border rounded-md overflow-auto max-h-[400px] w-full">
                     <table className="w-full text-sm">
                       <thead className="bg-muted sticky top-0">
                         <tr>

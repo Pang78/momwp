@@ -365,7 +365,7 @@ export default function DataAnalyzer(): React.ReactElement {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="explore" className="mt-4">
+            <TabsContent value="explore" className="mt-4 overflow-hidden">
               <DataExplorer 
                 data={getRowData()}
                 columns={result.columns}
@@ -373,16 +373,16 @@ export default function DataAnalyzer(): React.ReactElement {
               />
             </TabsContent>
             
-            <TabsContent value="multiview" className="mt-4">
+            <TabsContent value="multiview" className="mt-4 overflow-hidden">
               <MultiView 
                 data={getRowData()}
                 columns={result.columns}
               />
             </TabsContent>
             
-            <TabsContent value="insights" className="space-y-4 mt-4">
+            <TabsContent value="insights" className="space-y-4 mt-4 overflow-hidden">
               {result.insights.map((insight: DataInsight, index: number) => (
-                <Card key={index}>
+                <Card key={index} className="overflow-hidden">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle>{insight.title}</CardTitle>
@@ -410,7 +410,7 @@ export default function DataAnalyzer(): React.ReactElement {
               )}
             </TabsContent>
             
-            <TabsContent value="columns" className="space-y-4 mt-4">
+            <TabsContent value="columns" className="space-y-4 mt-4 overflow-hidden">
               {result.columns.map((column: DataColumn, index: number) => (
                 <Card key={index}>
                   <CardHeader>
