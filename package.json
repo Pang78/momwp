@@ -1,0 +1,15 @@
+{
+  "name": "momwp-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd momwp && npm run dev",
+    "build": "cd momwp && npm run build",
+    "start": "cd momwp && npm run start",
+    "lint": "cd momwp && npm run lint",
+    "install": "cd momwp && npm install"
+  },
+  "workspaces": [
+    "momwp"
+  ]
+} 
