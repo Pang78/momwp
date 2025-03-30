@@ -197,9 +197,4 @@ declare module 'lucide-react' {
   export const Download: ComponentType<IconProps>;
   export const FileText: ComponentType<IconProps>;
   export const AlertTriangle: ComponentType<IconProps>;
-}
-
-// React types
-declare module 'react' {
-  export function useState<T>(initialState: T | (() => T)): [T, (newState: T | ((prevState: T) => T)) => void];
 } 

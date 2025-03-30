@@ -37,7 +37,7 @@ export interface DataInsight {
   description: string;
   importance: number; // 0-10 scale
   columns: string[];
-  chartData?: any;
+  chartData?: any[];
   chartType?: string;
 }
 
@@ -51,6 +51,7 @@ export interface AnalysisResult {
     forecast: number[];
     mape: number; // Mean Absolute Percentage Error
     params?: any;
+    historicalData?: any[]; // Historical data for visualization
   };
 }
 
@@ -253,29 +254,44 @@ export const generateInsights = (columns: DataColumn[]): DataInsight[] => {
         const col1 = numericColumns[i];
         const col2 = numericColumns[j];
         
-        // Calculate correlation only for rows where both values exist
-        const pairs = col1.values.map((v, idx) => [v, col2.values[idx]])
-          .filter(pair => pair[0] !== null && pair[1] !== null);
+        // Convert to numbers and filter out missing values
+        const pairs = col1.values.map((v1, idx) => {
+          const v2 = col2.values[idx];
+          if (v1 !== null && v2 !== null) {
+            return [
+              typeof v1 === 'string' ? Number(v1) : v1, 
+              typeof v2 === 'string' ? Number(v2) : v2
+            ];
+          }
+          return null;
+        }).filter(pair => pair !== null) as [number, number][];
         
-        if (pairs.length > 5) { // Only if we have enough data points
-          const x = pairs.map(p => p[0]) as number[];
-          const y = pairs.map(p => p[1]) as number[];
-          
+        if (pairs.length > 5) { // Need enough pairs
           try {
+            const x = pairs.map(p => p[0]);
+            const y = pairs.map(p => p[1]);
+            
             const correlation = ss.sampleCorrelation(x, y);
             
             if (!isNaN(correlation) && Math.abs(correlation) > 0.5) {
+              const chartData = pairs.map(([x, y], i) => ({
+                x,
+                y,
+                name: `Point ${i+1}`
+              }));
+              
               insights.push({
                 type: 'correlation',
-                title: `Strong ${correlation > 0 ? 'positive' : 'negative'} correlation detected`,
+                title: `Strong ${correlation > 0 ? 'positive' : 'negative'} correlation`,
                 description: `${col1.name} and ${col2.name} have a correlation of ${correlation.toFixed(2)}.`,
-                importance: Math.abs(correlation) * 8,
+                importance: Math.min(Math.abs(correlation) * 8, 9),
                 columns: [col1.name, col2.name],
-                chartType: 'scatter'
+                chartType: 'scatter',
+                chartData
               });
             }
           } catch (e) {
-            console.error(`Error calculating correlation between ${col1.name} and ${col2.name}:`, e);
+            console.error('Error calculating correlation:', e);
           }
         }
       }
@@ -284,28 +300,59 @@ export const generateInsights = (columns: DataColumn[]): DataInsight[] => {
   
   // Check for outliers in numeric columns
   numericColumns.forEach(col => {
-    if (col.summary?.stdDev && col.summary?.mean) {
-      const outliers = col.values.filter(v => 
-        v !== null && 
-        Math.abs(v - col.summary!.mean!) > 3 * col.summary!.stdDev!
-      );
-      
-      if (outliers.length > 0) {
-        const outlierPercent = (outliers.length / col.values.length) * 100;
+    const values = col.values
+      .filter(v => v !== null)
+      .map(v => typeof v === 'string' ? Number(v) : v) as number[];
+    
+    if (values.length > 5) { // Need enough values
+      try {
+        const q1 = ss.quantile(values, 0.25);
+        const q3 = ss.quantile(values, 0.75);
+        const iqr = q3 - q1;
+        const lowerBound = q1 - 1.5 * iqr;
+        const upperBound = q3 + 1.5 * iqr;
         
-        insights.push({
-          type: 'outlier',
-          title: `Outliers detected in ${col.name}`,
-          description: `${outliers.length} outliers (${outlierPercent.toFixed(1)}% of values) were found in ${col.name}.`,
-          importance: Math.min(outlierPercent, 10),
-          columns: [col.name],
-          chartType: 'boxplot'
-        });
+        const outliers = values.filter(v => v < lowerBound || v > upperBound);
+        const outlierPercent = (outliers.length / values.length) * 100;
+        
+        if (outliers.length > 0 && outlierPercent > 1) {
+          // Create chart data showing distribution with outliers highlighted
+          const binCount = Math.min(20, Math.ceil(Math.sqrt(values.length)));
+          const min = ss.min(values);
+          const max = ss.max(values);
+          const binWidth = (max - min) / binCount;
+          
+          const bins = Array(binCount).fill(0).map((_, i) => {
+            const binStart = min + i * binWidth;
+            const binEnd = binStart + binWidth;
+            const count = values.filter(v => v >= binStart && v < binEnd).length;
+            return {
+              bin: i,
+              range: `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`,
+              count,
+              isOutlierBin: (binStart <= lowerBound && binEnd > lowerBound) || 
+                           (binStart < upperBound && binEnd >= upperBound) ||
+                           binStart < lowerBound || binEnd > upperBound
+            };
+          });
+          
+          insights.push({
+            type: 'outlier',
+            title: `Outliers detected`,
+            description: `${col.name} has ${outliers.length} outliers (${outlierPercent.toFixed(1)}% of values).`,
+            importance: Math.min(outlierPercent, 8),
+            columns: [col.name],
+            chartType: 'bar',
+            chartData: bins
+          });
+        }
+      } catch (e) {
+        console.error('Error detecting outliers:', e);
       }
     }
   });
   
-  // Check for time series data and seasonality
+  // Check for time-based trends
   const dateColumns = columns.filter(col => col.type === 'datetime');
   
   if (dateColumns.length > 0 && numericColumns.length > 0) {
@@ -330,6 +377,13 @@ export const generateInsights = (columns: DataColumn[]): DataInsight[] => {
           const result = regression.linear(data as [number, number][]);
           const slope = result.equation[0];
           
+          // Create chart data for trend visualization
+          const chartData = dateValues.map((item, i) => ({
+            date: item.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            value: item.value,
+            trend: result.predict(i)[1]
+          }));
+          
           if (Math.abs(slope) > 0.01) {
             insights.push({
               type: 'trend',
@@ -337,7 +391,8 @@ export const generateInsights = (columns: DataColumn[]): DataInsight[] => {
               description: `${numCol.name} shows a ${slope > 0 ? 'rising' : 'falling'} trend over time.`,
               importance: Math.min(Math.abs(slope) * 100, 9),
               columns: [dateCol.name, numCol.name],
-              chartType: 'line'
+              chartType: 'line',
+              chartData
             });
           }
         }
@@ -350,27 +405,47 @@ export const generateInsights = (columns: DataColumn[]): DataInsight[] => {
   
   catColumns.forEach(col => {
     if (col.summary?.uniqueValues) {
-      const uniqueCount = col.summary.uniqueValues.length;
-      const totalCount = col.values.length;
+      const values = col.summary.uniqueValues;
+      const totalCount = values.reduce((sum, { count }) => sum + count, 0);
       
-      if (uniqueCount < totalCount * 0.1 && uniqueCount > 1 && uniqueCount < 15) {
-        // We have a good categorical column with reasonable distribution
-        const topCategories = col.summary.uniqueValues.slice(0, 5);
-        const topCategoriesPercent = topCategories.reduce((sum, item) => sum + item.count, 0) / totalCount * 100;
+      // If there's a dominant category or many categories
+      const dominantPercent = (values[0]?.count / totalCount) * 100;
+      const tooManyCategories = values.length > 10;
+      
+      if (dominantPercent > 60 || tooManyCategories) {
+        // Format data for charting
+        const chartData = values.slice(0, 10).map(({ value, count }) => ({
+          category: value.length > 15 ? value.substring(0, 15) + '...' : value,
+          count,
+          percent: (count / totalCount) * 100
+        }));
         
-        insights.push({
-          type: 'distribution',
-          title: `Distribution analysis for ${col.name}`,
-          description: `The top ${topCategories.length} values account for ${topCategoriesPercent.toFixed(1)}% of all values.`,
-          importance: 6,
-          columns: [col.name],
-          chartType: 'bar'
-        });
+        if (dominantPercent > 60) {
+          insights.push({
+            type: 'distribution',
+            title: 'Uneven distribution detected',
+            description: `${col.name} has a dominant category (${values[0].value}) representing ${dominantPercent.toFixed(1)}% of values.`,
+            importance: Math.min(dominantPercent / 10, 8),
+            columns: [col.name],
+            chartType: 'bar',
+            chartData
+          });
+        } else if (tooManyCategories) {
+          insights.push({
+            type: 'distribution',
+            title: 'High cardinality detected',
+            description: `${col.name} has ${values.length} unique values, which may be too many for a categorical variable.`,
+            importance: 6,
+            columns: [col.name],
+            chartType: 'bar',
+            chartData
+          });
+        }
       }
     }
   });
   
-  return insights.sort((a, b) => b.importance - a.importance);
+  return insights;
 };
 
 /**
@@ -388,7 +463,7 @@ export const performTimeSeries = (
   data: number[], 
   period: number = 7, // Default period (e.g., 7 for weekly seasonality)
   forecastSteps: number = 10
-): { forecast: number[], mape: number } => {
+): { forecast: number[], mape: number, historicalData: any[] } => {
   if (data.length < period * 2) {
     throw new Error(`Need at least ${period * 2} data points for forecasting. Currently have ${data.length}.`);
   }
@@ -401,6 +476,13 @@ export const performTimeSeries = (
       polynomial: 2
     };
     const smoothedData = savitzkyGolay(data, 1, options);
+    
+    // Convert to historical data for visualization
+    const historicalData = smoothedData.map((value: number, index: number) => ({
+      index,
+      value,
+      type: 'Historical'
+    }));
     
     // Determine seasonality
     const seasonalPatterns: number[] = [];
@@ -449,7 +531,7 @@ export const performTimeSeries = (
     
     const mape = (totalError / testSize) * 100;
     
-    return { forecast, mape };
+    return { forecast, mape, historicalData };
   } catch (e) {
     console.error('Error in time series forecasting:', e);
     throw e;
@@ -509,7 +591,7 @@ export const analyzeData = async (file: File): Promise<AnalysisResult> => {
         // Try to detect seasonality
         // Simplistic approach: try common periods (7=weekly, 12=monthly, 4=quarterly)
         const commonPeriods = [7, 12, 4, 30];
-        let bestPeriod = 7; // Default to weekly
+        let bestPeriod = 7;
         
         if (timeSeriesData.length >= 2 * Math.max(...commonPeriods)) {
           bestPeriod = commonPeriods.reduce((best, period) => {
@@ -541,13 +623,14 @@ export const analyzeData = async (file: File): Promise<AnalysisResult> => {
         }
         
         // Run forecasting
-        const { forecast, mape } = performTimeSeries(timeSeriesData, bestPeriod, 10);
+        const { forecast, mape, historicalData } = performTimeSeries(timeSeriesData, bestPeriod, 10);
         
         timeSeries = {
-          modelType: 'Simplified SARIMA',
+          modelType: 'SARIMA Analysis',
           forecast,
           mape,
-          params: { period: bestPeriod }
+          params: { period: bestPeriod },
+          historicalData
         };
       }
     }
