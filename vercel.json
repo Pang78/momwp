@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "outputDirectory": "momwp/.next",
+  "outputDirectory": ".next",
   "regions": ["sin1"],
   "github": {
     "silent": true

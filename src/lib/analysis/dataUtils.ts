@@ -396,8 +396,8 @@ export const performTimeSeries = (
   try {
     // Smooth data to reduce noise
     const options = {
-      windowSize: Math.min(9, Math.floor(data.length / 3)),
       derivative: 0,
+      windowSize: Math.min(9, Math.floor(data.length / 3)),
       polynomial: 2
     };
     const smoothedData = SavitzkyGolay.savitzkyGolay(data, 1, options);

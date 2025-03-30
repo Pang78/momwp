@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ExclamationTriangleIcon, UploadIcon, DownloadIcon, FileTextIcon } from 'lucide-react';
+import { Upload, Download, FileText, AlertTriangle } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 
 interface DataAnalyzerProps {
@@ -172,7 +172,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                 className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => document.getElementById('file-upload')?.click()}
               >
-                <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">Drag &amp; drop your CSV file here</p>
                 <p className="text-sm text-muted-foreground">or click to browse</p>
                 <input
@@ -187,7 +187,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
               <div className="flex justify-between items-center">
                 {file && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileTextIcon className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                     <span>Selected: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)</span>
                   </div>
                 )}
@@ -198,7 +198,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                     download
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
                   >
-                    <DownloadIcon className="h-4 w-4" />
+                    <Download className="h-4 w-4" />
                     <span>Download sample data</span>
                   </a>
                 </div>
@@ -206,7 +206,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
               
               {error && (
                 <Alert variant="destructive">
-                  <ExclamationTriangleIcon className="h-4 w-4" />
+                  <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
