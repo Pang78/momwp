@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDatasetStore } from '@/lib/store';
 import DatasetSearch from '@/components/datasets/DatasetSearch';
 import DatasetViewer from '@/components/datasets/DatasetViewer';
@@ -13,10 +13,12 @@ export default function Home() {
     setShowSearch(true);
   };
 
-  // When a dataset is selected, hide the search interface
-  if (selectedDataset && showSearch) {
-    setShowSearch(false);
-  }
+  useEffect(() => {
+    // When a dataset is selected, hide the search interface
+    if (selectedDataset && showSearch) {
+      setShowSearch(false);
+    }
+  }, [selectedDataset, showSearch]);
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-8 lg:p-12">
@@ -36,4 +38,4 @@ export default function Home() {
       </div>
     </main>
   );
-} 
+}

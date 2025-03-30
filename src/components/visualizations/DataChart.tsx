@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import {
   BarChart,
@@ -22,6 +24,12 @@ interface DataChartProps {
   data: DataRecord[];
   fields: Array<{ id: string; type: string }>;
   isLoading: boolean;
+}
+
+// Chart data type for more specific typing
+interface ChartDataItem {
+  [key: string]: string | number;
+  count: number;
 }
 
 // Chart colors
@@ -56,25 +64,25 @@ const DataChart = ({ data, fields, isLoading }: DataChartProps) => {
     if (!data.length || !xAxisField || !yAxisField) return [];
     
     // Group by x-axis value and sum y-axis values
-    const groupedData = data.reduce((acc, item) => {
-      const xValue = item[xAxisField]?.toString() || 'Unknown';
+    const groupedData = data.reduce<Record<string, ChartDataItem>>((acc, item) => {
+      const xValue = String(item[xAxisField] || 'Unknown');
       if (!acc[xValue]) {
         acc[xValue] = { [xAxisField]: xValue, [yAxisField]: 0, count: 0 };
       }
       
       // For numeric fields, sum them up. For others, count occurrences
-      const yValue = parseFloat(item[yAxisField]);
+      const yValue = parseFloat(String(item[yAxisField]));
       if (!isNaN(yValue)) {
-        acc[xValue][yAxisField] += yValue;
+        acc[xValue][yAxisField] = (acc[xValue][yAxisField] as number) + yValue;
       }
       acc[xValue].count += 1;
       
       return acc;
-    }, {} as Record<string, any>);
+    }, {});
     
     // Convert back to array and limit to top 20 items
     return Object.values(groupedData)
-      .sort((a, b) => b[yAxisField] - a[yAxisField])
+      .sort((a, b) => (b[yAxisField] as number) - (a[yAxisField] as number))
       .slice(0, 20);
   }, [data, xAxisField, yAxisField]);
 

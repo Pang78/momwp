@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { ArrowLeft, Download, Search } from 'lucide-react';
 import { useDatasetStore } from '@/lib/store';
@@ -6,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DataTable from '@/components/visualizations/DataTable';
 import DataChart from '@/components/visualizations/DataChart';
+import { DataRecord } from '@/lib/api/datagovsg';
 
 export const DatasetViewer = ({ onBack }: { onBack: () => void }) => {
   const { 
@@ -30,9 +33,9 @@ export const DatasetViewer = ({ onBack }: { onBack: () => void }) => {
     if (!datasetRecords.length || !recordFields.length) return;
     
     // Create CSV content
-    const headers = recordFields.map(field => field.id).join(',');
-    const rows = datasetRecords.map(record => 
-      recordFields.map(field => `"${record[field.id] || ''}"`).join(',')
+    const headers = recordFields.map((field: { id: string; type: string }) => field.id).join(',');
+    const rows = datasetRecords.map((record: DataRecord) => 
+      recordFields.map((field: { id: string; type: string }) => `"${String(record[field.id] || '')}"`).join(',')
     );
     const csvContent = `data:text/csv;charset=utf-8,${headers}\n${rows.join('\n')}`;
     

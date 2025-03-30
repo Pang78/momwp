@@ -1,83 +1,36 @@
-# Data.gov.sg Explorer
-
-A modern web application for searching, visualizing, and exploring datasets from data.gov.sg.
-
-## Features
-
-- 🔍 **Dataset Search**: Search through all available datasets on data.gov.sg
-- 📊 **Data Visualization**: View data in tables, bar charts, line charts, and pie charts
-- 📱 **Responsive Design**: Works on desktop, tablet, and mobile devices
-- 🔄 **Real-time Filtering**: Filter and search within datasets
-- 💾 **Data Export**: Download data as CSV for further analysis
-
-## Technologies
-
-- **Framework**: Next.js with TypeScript
-- **UI Library**: Tailwind CSS with Shadcn UI components
-- **State Management**: Zustand
-- **Data Visualization**: Recharts
-- **Data Table**: TanStack Table
-- **API Communication**: Axios
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18.0.0 or later
-- npm or yarn
-
-### Installation
+First, run the development server:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/data-gov-sg-explorer.git
-cd data-gov-sg-explorer
-
-# Install dependencies
-npm install
-
-# Start the development server
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Development
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Project Structure
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```
-/src
-  /app                 # Next.js app directory
-  /components          # React components
-    /datasets          # Dataset-related components
-    /visualizations    # Visualization components
-  /lib                 # Utilities and API clients
-    /api               # API clients
-  /types               # TypeScript type definitions
-```
+## Learn More
 
-### Environment Variables
+To learn more about Next.js, take a look at the following resources:
 
-No environment variables are required as the application uses public APIs.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## Deployment
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-This application can be easily deployed to Vercel:
+## Deploy on Vercel
 
-1. Push your code to GitHub
-2. Connect your GitHub repository to Vercel
-3. Deploy with one click
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## License
-
-MIT
-
-## Acknowledgements
-
-- [data.gov.sg](https://data.gov.sg) for providing the data and APIs
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Shadcn UI](https://ui.shadcn.com/)
-- [Recharts](https://recharts.org/)
-- [TanStack Table](https://tanstack.com/table)
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

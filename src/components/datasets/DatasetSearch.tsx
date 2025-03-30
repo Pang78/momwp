@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -28,7 +30,7 @@ export const DatasetSearch = () => {
     if (searchTerm.trim() === '') {
       setFilteredDatasets(datasets);
     } else {
-      const filtered = datasets.filter(dataset => 
+      const filtered = datasets.filter((dataset: Dataset) => 
         dataset.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredDatasets(filtered);

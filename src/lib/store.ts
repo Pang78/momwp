@@ -1,5 +1,10 @@
+'use client';
+
 import { create } from 'zustand';
-import api, { Dataset, DatasetMetadata, DataRecord, Collection } from './api/datagovsg';
+// Use a type-only import to avoid circular dependencies
+import type { Dataset, DatasetMetadata, DataRecord, Collection } from './api/datagovsg';
+// Then import the actual API
+import api from './api/datagovsg';
 
 interface DatasetState {
   // Datasets
@@ -53,7 +58,8 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         currentPage: page,
         isLoading: false 
       });
-    } catch (error) {
+    } catch (err: unknown) {
+      console.error('Failed to fetch datasets:', err);
       set({ 
         error: 'Failed to fetch datasets', 
         isLoading: false 
@@ -70,9 +76,10 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         // Load initial data from the dataset
         await get().searchDataset('', 100, 0);
       } else {
-        set({ error: 'Failed to fetch dataset metadata' });
+        set({ error: 'Failed to fetch dataset metadata', isLoading: false });
       }
-    } catch (error) {
+    } catch (err: unknown) {
+      console.error('Failed to select dataset:', err);
       set({ error: 'Failed to select dataset', isLoading: false });
     }
   },
@@ -99,7 +106,8 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
           isLoading: false
         });
       }
-    } catch (error) {
+    } catch (err: unknown) {
+      console.error('Error searching dataset:', err);
       set({
         error: 'Error searching dataset',
         isLoading: false
@@ -115,7 +123,8 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         collections: result.collections,
         isLoading: false 
       });
-    } catch (error) {
+    } catch (err: unknown) {
+      console.error('Failed to fetch collections:', err);
       set({ 
         error: 'Failed to fetch collections', 
         isLoading: false 

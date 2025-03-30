@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+'use client';
+
+import { useMemo, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,7 +20,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataRecord } from '@/lib/api/datagovsg';
-import { useState } from 'react';
 
 interface DataTableProps {
   data: DataRecord[];

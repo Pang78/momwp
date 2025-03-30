@@ -52,7 +52,7 @@ export interface DatasetMetadata {
 }
 
 export interface DataRecord {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface DatastoreSearchResponse {
@@ -67,16 +67,22 @@ export interface DatastoreSearchResponse {
   };
 }
 
+interface ApiResponse<T> {
+  code: number;
+  data: T;
+  errorMsg?: string;
+}
+
 // API Functions
 export const api = {
   // Get all datasets with optional pagination
   async getDatasets(page = 1): Promise<{ datasets: Dataset[], pages: number }> {
     try {
-      const response = await axios.get(`${BASE_URL}/datasets`, {
+      const response = await axios.get<ApiResponse<{ datasets: Dataset[], pages: number }>>(`${BASE_URL}/datasets`, {
         params: { page }
       });
       return response.data.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching datasets:', error);
       return { datasets: [], pages: 0 };
     }
@@ -85,9 +91,9 @@ export const api = {
   // Get dataset metadata
   async getDatasetMetadata(datasetId: string): Promise<DatasetMetadata | null> {
     try {
-      const response = await axios.get(`${BASE_URL}/datasets/${datasetId}/metadata`);
+      const response = await axios.get<ApiResponse<DatasetMetadata>>(`${BASE_URL}/datasets/${datasetId}/metadata`);
       return response.data.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error fetching metadata for dataset ${datasetId}:`, error);
       return null;
     }
@@ -101,7 +107,7 @@ export const api = {
     offset: number = 0
   ): Promise<DatastoreSearchResponse | null> {
     try {
-      const response = await axios.get(`${LEGACY_URL}/datastore_search`, {
+      const response = await axios.get<DatastoreSearchResponse>(`${LEGACY_URL}/datastore_search`, {
         params: {
           resource_id: datasetId,
           q: query || undefined,
@@ -110,7 +116,7 @@ export const api = {
         }
       });
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error searching dataset ${datasetId}:`, error);
       return null;
     }
@@ -119,11 +125,11 @@ export const api = {
   // Get all collections with optional pagination
   async getCollections(page = 1): Promise<{ collections: Collection[], pages: number }> {
     try {
-      const response = await axios.get(`${BASE_URL}/collections`, {
+      const response = await axios.get<ApiResponse<{ collections: Collection[], pages: number }>>(`${BASE_URL}/collections`, {
         params: { page }
       });
       return response.data.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching collections:', error);
       return { collections: [], pages: 0 };
     }
@@ -135,12 +141,12 @@ export const api = {
     withDatasetMetadata = true
   ): Promise<{ collectionMetadata: Collection, datasetMetadata: DatasetMetadata[] } | null> {
     try {
-      const response = await axios.get(
+      const response = await axios.get<ApiResponse<{ collectionMetadata: Collection, datasetMetadata: DatasetMetadata[] }>>(
         `${BASE_URL}/collections/${collectionId}/metadata`,
         { params: { withDatasetMetadata } }
       );
       return response.data.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error fetching metadata for collection ${collectionId}:`, error);
       return null;
     }
