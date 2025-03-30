@@ -184,12 +184,25 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                 />
               </div>
               
-              {file && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileTextIcon className="h-4 w-4" />
-                  <span>Selected: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)</span>
+              <div className="flex justify-between items-center">
+                {file && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <FileTextIcon className="h-4 w-4" />
+                    <span>Selected: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2 text-sm">
+                  <a 
+                    href="/sample_data.csv" 
+                    download
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                  >
+                    <DownloadIcon className="h-4 w-4" />
+                    <span>Download sample data</span>
+                  </a>
                 </div>
-              )}
+              </div>
               
               {error && (
                 <Alert variant="destructive">
