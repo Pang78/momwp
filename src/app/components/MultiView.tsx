@@ -48,6 +48,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '', 
       chartType: 'bar',
       filters: [],
+      groupBy: 'none',
       title: 'Chart 1'
     },
     { 
@@ -56,6 +57,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '', 
       chartType: 'line',
       filters: [],
+      groupBy: 'none',
       title: 'Chart 2'
     },
     { 
@@ -64,6 +66,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '', 
       chartType: 'pie',
       filters: [],
+      groupBy: 'none',
       title: 'Chart 3'
     },
     { 
@@ -72,6 +75,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '', 
       chartType: 'scatter',
       filters: [],
+      groupBy: 'none',
       title: 'Chart 4'
     }
   ]);
@@ -84,6 +88,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '',
       chartType: 'bar',
       filters: [],
+      groupBy: 'none',
       title: `Chart ${views.length + 1}`
     };
     

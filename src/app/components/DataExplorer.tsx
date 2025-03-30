@@ -108,11 +108,13 @@ export default function DataExplorer({
   const [yAxis, setYAxis] = React.useState<string>(initialConfig?.yAxis || '');
   const [filters, setFilters] = React.useState<Filter[]>(initialConfig?.filters || []);
   const [sort, setSort] = React.useState<Sort | null>(initialConfig?.sort || null);
-  const [groupBy, setGroupBy] = React.useState<string>(initialConfig?.groupBy || '');
+  const [groupBy, setGroupBy] = React.useState<string>(initialConfig?.groupBy || 'none');
   const [limit, setLimit] = React.useState<number>(100);
   const [aggregation, setAggregation] = React.useState<'sum' | 'avg' | 'count' | 'min' | 'max'>(
     initialConfig?.aggregation || 'sum'
   );
+  const [hasInitializedAxes, setHasInitializedAxes] = React.useState(false);
+  const [lastConfigChange, setLastConfigChange] = React.useState<number>(0);
 
   // Extract column names and types
   const columnOptions = React.useMemo(() => {
@@ -122,26 +124,42 @@ export default function DataExplorer({
     }));
   }, [columns]);
 
-  // Initialize axes if not set
-  React.useMemo(() => {
+  // Initialize axes if not set - only run this once
+  React.useEffect(() => {
+    // Skip if we've already initialized or if both axes are already set
+    if (hasInitializedAxes || (xAxis && yAxis)) return;
+
     if (columnOptions.length > 0) {
+      const shouldUpdateX = !xAxis;
+      const shouldUpdateY = !yAxis;
+      let newXAxis = xAxis;
+      let newYAxis = yAxis;
+      
       // Find a categorical column for X-axis
-      const categoricalCol = columnOptions.find(col => col.type === 'categorical' || col.type === 'datetime');
-      if (categoricalCol && !xAxis) {
-        setXAxis(categoricalCol.name);
-      } else if (!xAxis && columnOptions.length > 0) {
-        setXAxis(columnOptions[0].name);
+      if (shouldUpdateX) {
+        const categoricalCol = columnOptions.find(col => col.type === 'categorical' || col.type === 'datetime');
+        newXAxis = categoricalCol ? categoricalCol.name : (columnOptions[0]?.name || '');
       }
 
       // Find a numeric column for Y-axis
-      const numericCol = columnOptions.find(col => col.type === 'numeric');
-      if (numericCol && !yAxis) {
-        setYAxis(numericCol.name);
-      } else if (!yAxis && columnOptions.length > 1) {
-        setYAxis(columnOptions[1].name);
+      if (shouldUpdateY) {
+        const numericCol = columnOptions.find(col => col.type === 'numeric');
+        newYAxis = numericCol ? numericCol.name : (columnOptions[columnOptions.length > 1 ? 1 : 0]?.name || '');
       }
+
+      // Only update state if values have changed
+      if (shouldUpdateX && newXAxis) {
+        setXAxis(newXAxis);
+      }
+      
+      if (shouldUpdateY && newYAxis) {
+        setYAxis(newYAxis);
+      }
+      
+      // Mark as initialized
+      setHasInitializedAxes(true);
     }
-  }, [columnOptions, xAxis, yAxis]);
+  }, [columnOptions, hasInitializedAxes, xAxis, yAxis]);
 
   // Apply filters
   const filteredData = React.useMemo(() => {
@@ -200,7 +218,7 @@ export default function DataExplorer({
     if (!xAxis || !yAxis || sortedData.length === 0) return [];
 
     // For simple charts without grouping
-    if (!groupBy) {
+    if (!groupBy || groupBy === 'none') {
       // Limit the number of data points
       const limitedData = sortedData.slice(0, limit);
       
@@ -371,13 +389,13 @@ export default function DataExplorer({
                 labelFormatter={(label) => `${xAxis}: ${label}`}
               />
               <Legend />
-              {groupBy ? (
+              {groupBy && groupBy !== 'none' ? (
                 // If grouped, we need separate bars for each group
                 Object.keys(chartData[0] || {})
                   .filter(key => key !== xAxis && key !== '_original')
                   .map((key, index) => (
                     <Bar 
-                      key={key} 
+                      key={`bar-group-${index}-${key.replace(/\W/g, '')}`}
                       dataKey={key} 
                       fill={COLORS[index % COLORS.length]} 
                       name={key}
@@ -386,6 +404,7 @@ export default function DataExplorer({
               ) : (
                 // Simple bar chart
                 <Bar 
+                  key={`bar-simple-${yAxis.replace(/\W/g, '')}`}
                   dataKey={yAxis} 
                   fill={COLORS[0]} 
                   name={yAxis} 
@@ -407,13 +426,13 @@ export default function DataExplorer({
                 labelFormatter={(label) => `${xAxis}: ${label}`}
               />
               <Legend />
-              {groupBy ? (
+              {groupBy && groupBy !== 'none' ? (
                 // If grouped, we need separate lines for each group
                 Object.keys(chartData[0] || {})
                   .filter(key => key !== xAxis && key !== '_original')
                   .map((key, index) => (
                     <Line 
-                      key={key} 
+                      key={`line-group-${index}-${key.replace(/\W/g, '')}`}
                       type="monotone" 
                       dataKey={key} 
                       stroke={COLORS[index % COLORS.length]} 
@@ -424,6 +443,7 @@ export default function DataExplorer({
               ) : (
                 // Simple line chart
                 <Line 
+                  key={`line-simple-${yAxis.replace(/\W/g, '')}`}
                   type="monotone" 
                   dataKey={yAxis} 
                   stroke={COLORS[0]} 
@@ -452,13 +472,13 @@ export default function DataExplorer({
               />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
-              {groupBy ? (
+              {groupBy && groupBy !== 'none' ? (
                 // If grouped, we need separate scatter plots for each group
                 Object.keys(chartData[0] || {})
                   .filter(key => key !== xAxis && key !== '_original')
                   .map((key, index) => (
                     <Scatter 
-                      key={key} 
+                      key={`scatter-group-${index}-${key.replace(/\W/g, '')}`}
                       name={key} 
                       data={chartData.filter(item => item[key] !== undefined)} 
                       fill={COLORS[index % COLORS.length]} 
@@ -467,6 +487,7 @@ export default function DataExplorer({
               ) : (
                 // Simple scatter plot
                 <Scatter 
+                  key={`scatter-simple-${yAxis.replace(/\W/g, '')}`}
                   name={yAxis} 
                   data={chartData} 
                   fill={COLORS[0]} 
@@ -532,9 +553,20 @@ export default function DataExplorer({
     document.body.removeChild(link);
   };
 
-  // Call onConfigChange when configuration changes
+  // Call onConfigChange when configuration changes, but throttle updates
   React.useEffect(() => {
-    if (onConfigChange) {
+    if (!onConfigChange || !xAxis || !yAxis) return;
+    
+    // Skip updates if it's been less than 300ms since the last update
+    const now = Date.now();
+    if (now - lastConfigChange < 300) {
+      return;
+    }
+    
+    setLastConfigChange(now);
+    
+    // Use a timeout to debounce frequent updates
+    const timeoutId = setTimeout(() => {
       onConfigChange({
         chartType,
         xAxis,
@@ -544,8 +576,21 @@ export default function DataExplorer({
         groupBy,
         aggregation
       });
-    }
-  }, [chartType, xAxis, yAxis, filters, sort, groupBy, aggregation, onConfigChange]);
+    }, 100);
+    
+    // Clean up the timeout if the effect runs again before the timeout fires
+    return () => clearTimeout(timeoutId);
+  }, [
+    chartType, 
+    xAxis, 
+    yAxis, 
+    filters, 
+    sort, 
+    groupBy, 
+    aggregation, 
+    onConfigChange, 
+    lastConfigChange
+  ]);
 
   return (
     <div className="space-y-4">
@@ -638,7 +683,7 @@ export default function DataExplorer({
                       <SelectValue placeholder="No grouping" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No grouping</SelectItem>
+                      <SelectItem value="none">No grouping</SelectItem>
                       {columnOptions
                         .filter(col => col.type === 'categorical') // Only categorical columns make sense for grouping
                         .map(col => (
