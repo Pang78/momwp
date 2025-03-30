@@ -71,7 +71,6 @@ declare module 'ml-savitzky-golay' {
     polynomial?: number;
   }
 
-  export class SavitzkyGolay {
-    static savitzkyGolay(data: number[], h: number, options?: SavitzkyGolayOptions): number[];
-  }
+  function savitzkyGolay(data: number[], h: number, options?: SavitzkyGolayOptions): number[];
+  export default savitzkyGolay;
 } 

@@ -5,7 +5,7 @@ import * as ss from 'simple-statistics';
 import { Matrix } from 'ml-matrix';
 import regression from 'regression';
 import * as jstat from 'jstat';
-import { SavitzkyGolay } from 'ml-savitzky-golay';
+import savitzkyGolay from 'ml-savitzky-golay';
 
 // Types for our data analysis
 export interface DataColumn {
@@ -400,7 +400,7 @@ export const performTimeSeries = (
       windowSize: Math.min(9, Math.floor(data.length / 3)),
       polynomial: 2
     };
-    const smoothedData = SavitzkyGolay.savitzkyGolay(data, 1, options);
+    const smoothedData = savitzkyGolay(data, 1, options);
     
     // Determine seasonality
     const seasonalPatterns: number[] = [];

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { analyzeData, AnalysisResult, DataInsight } from '@/lib/analysis/dataUtils';
+import { analyzeData, AnalysisResult, DataInsight, DataColumn } from '@/lib/analysis/dataUtils';
 import { 
   BarChart, 
   Bar, 
@@ -59,7 +59,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
     try {
       // Simulate progress steps for better UX
       const progressTimer = setInterval(() => {
-        setAnalysisProgress(prev => {
+        setAnalysisProgress((prev: number) => {
           if (prev >= 90) {
             clearInterval(progressTimer);
             return prev;
@@ -291,7 +291,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
             </TabsList>
             
             <TabsContent value="insights" className="space-y-4 mt-4">
-              {result.insights.map((insight, index) => (
+              {result.insights.map((insight: DataInsight, index: number) => (
                 <Card key={index}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -321,7 +321,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
             </TabsContent>
             
             <TabsContent value="columns" className="space-y-4 mt-4">
-              {result.columns.map((column, index) => (
+              {result.columns.map((column: DataColumn, index: number) => (
                 <Card key={index}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -355,7 +355,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                           <div className="col-span-2">
                             <p className="text-sm text-muted-foreground mb-2">Top Values</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {column.summary.uniqueValues.slice(0, 6).map((value, i) => (
+                              {column.summary.uniqueValues.slice(0, 6).map((value: { value: string; count: number }, i: number) => (
                                 <div key={i} className="flex justify-between border rounded px-3 py-2">
                                   <span className="truncate">{value.value}</span>
                                   <span className="text-muted-foreground">{value.count}</span>
@@ -415,7 +415,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                               value: 100 + Math.random() * 50, // Mock historical data
                               type: 'Historical'
                             })),
-                            ...result.timeSeries.forecast.map((value, i) => ({
+                            ...result.timeSeries.forecast.map((value: number, i: number) => ({
                               index: 10 + i,
                               value,
                               type: 'Forecast'
@@ -445,7 +445,7 @@ export default function DataAnalyzer({}: DataAnalyzerProps) {
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-5 gap-2">
-                            {result.timeSeries.forecast.map((value, i) => (
+                            {result.timeSeries.forecast.map((value: number, i: number) => (
                               <div key={i} className="border rounded p-2 text-center">
                                 <div className="text-xs text-muted-foreground">Step {i+1}</div>
                                 <div className="font-medium">{value.toFixed(2)}</div>
