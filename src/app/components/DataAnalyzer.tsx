@@ -28,6 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Upload, Download, FileText, AlertTriangle, Info } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
+import DataExplorer from './DataExplorer';
+import MultiView from './MultiView';
 
 interface DataAnalyzerProps extends Record<string, never> {}
 
@@ -113,7 +115,7 @@ export default function DataAnalyzer(): React.ReactElement {
         const sampleSize = Math.min(10, relevantColumns[0].values.length);
         
         chartData = Array(sampleSize).fill(0).map((_, i) => {
-          const dataPoint: any = { index: i };
+          const dataPoint = { index: i };
           
           relevantColumns.forEach(col => {
             dataPoint[col.name] = col.values[i];
@@ -204,6 +206,24 @@ export default function DataAnalyzer(): React.ReactElement {
           </div>
         );
     }
+  };
+
+  // Convert data to array of objects for the explorer
+  const getRowData = () => {
+    if (!result || !result.columns || !result.columns.length) return [];
+
+    const rowCount = result.columns[0].values.length;
+    const rows = [];
+
+    for (let i = 0; i < rowCount; i++) {
+      const row = {};
+      result.columns.forEach(col => {
+        row[col.name] = col.values[i];
+      });
+      rows.push(row);
+    }
+
+    return rows;
   };
 
   return (
@@ -337,14 +357,31 @@ export default function DataAnalyzer(): React.ReactElement {
             </CardContent>
           </Card>
           
-          <Tabs defaultValue="insights">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs defaultValue="explore">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="explore">Explore Data</TabsTrigger>
+              <TabsTrigger value="multiview">Multiple Views</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="columns">Columns</TabsTrigger>
               <TabsTrigger value="forecast">
                 {result.timeSeries ? 'SARIMA Forecast' : 'Forecast'}
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="explore" className="mt-4">
+              <DataExplorer 
+                data={getRowData()}
+                columns={result.columns}
+                showControls={true}
+              />
+            </TabsContent>
+            
+            <TabsContent value="multiview" className="mt-4">
+              <MultiView 
+                data={getRowData()}
+                columns={result.columns}
+              />
+            </TabsContent>
             
             <TabsContent value="insights" className="space-y-4 mt-4">
               {result.insights.map((insight: DataInsight, index: number) => (
