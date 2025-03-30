@@ -148,8 +148,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="font-medium">Multi-View Data Explorer</div>
+      <div className="flex justify-between items-center mb-6 pb-2 border-b">
+        <div className="font-medium text-lg">Multi-View Data Explorer</div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -157,7 +157,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
             onClick={() => setLayout('1x1')}
             className={layout === '1x1' ? 'bg-primary text-primary-foreground' : ''}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Single</span>
           </Button>
           <Button 
             variant="outline" 
@@ -165,7 +166,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
             onClick={() => setLayout('2x1')}
             className={layout === '2x1' ? 'bg-primary text-primary-foreground' : ''}
           >
-            <Grid2X2 className="h-4 w-4" />
+            <Grid2X2 className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">2 Charts</span>
           </Button>
           <Button 
             variant="outline" 
@@ -173,7 +175,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
             onClick={() => setLayout('2x2')}
             className={layout === '2x2' ? 'bg-primary text-primary-foreground' : ''}
           >
-            <Grid3X3 className="h-4 w-4" />
+            <Grid3X3 className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">4 Charts</span>
           </Button>
           <Button 
             variant="outline" 
@@ -188,8 +191,8 @@ export default function MultiView({ data, columns }: MultiViewProps) {
 
       {expandedView ? (
         // Expanded single view
-        <Card className="w-full overflow-hidden">
-          <CardHeader className="pb-2">
+        <Card className="w-full overflow-hidden shadow-sm border border-gray-200">
+          <CardHeader className="pb-2 bg-gray-50">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg">
                 {views.find(v => v.id === expandedView)?.title || 'Chart'}
@@ -203,7 +206,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-4">
             <div className="h-[calc(100vh-200px)]">
               {views.find(v => v.id === expandedView) && (
                 <DataExplorer 
@@ -221,10 +224,10 @@ export default function MultiView({ data, columns }: MultiViewProps) {
         </Card>
       ) : (
         // Grid view with multiple charts
-        <div className={`grid ${getGridClass()} gap-4`}>
+        <div className={`grid ${getGridClass()} gap-6`}>
           {visibleViews.map((view) => (
-            <Card key={view.id} className="w-full">
-              <CardHeader className="pb-2">
+            <Card key={view.id} className="w-full overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200">
+              <CardHeader className="pb-2 bg-gray-50">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">{view.title}</CardTitle>
                   <div className="flex">
@@ -233,6 +236,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
                       size="icon" 
                       onClick={() => duplicateView(view.id)}
                       title="Duplicate"
+                      className="h-8 w-8"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -241,6 +245,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
                       size="icon" 
                       onClick={() => setExpandedView(view.id)}
                       title="Expand"
+                      className="h-8 w-8"
                     >
                       <Maximize2 className="h-4 w-4" />
                     </Button>
@@ -249,14 +254,15 @@ export default function MultiView({ data, columns }: MultiViewProps) {
                       size="icon" 
                       onClick={() => removeView(view.id)}
                       title="Remove"
+                      className="h-8 w-8"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="h-80">
+              <CardContent className="p-2 sm:p-4">
+                <div className="h-80 w-full">
                   <DataExplorer 
                     data={data}
                     columns={columns}

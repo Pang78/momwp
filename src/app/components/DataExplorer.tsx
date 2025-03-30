@@ -92,8 +92,9 @@ interface Sort {
 }
 
 const COLORS = [
-  '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00C49F', 
-  '#FFBB28', '#FF8042', '#AF19FF', '#001CCE', '#19A979', '#F15C19'
+  '#4285F4', '#EA4335', '#FBBC05', '#34A853', '#8AB4F8', '#F6AEA9', 
+  '#FDE293', '#A8DAB5', '#0F9D58', '#DB4437', '#F4B400', '#0F9D58',
+  '#137333', '#3949AB', '#43A047', '#039BE5', '#7CB342', '#C0CA33'
 ];
 
 export default function DataExplorer({ 
@@ -362,16 +363,33 @@ export default function DataExplorer({
   const renderChart = () => {
     if (!xAxis || !yAxis) {
       return (
-        <div className="flex items-center justify-center h-64 border rounded-md">
-          <p className="text-muted-foreground">Please select X and Y axes to visualize data</p>
+        <div className="flex items-center justify-center h-[400px] border rounded-md bg-gray-50">
+          <div className="text-center p-6">
+            <p className="text-muted-foreground mb-2">Please select X and Y axes to visualize data</p>
+            <Button variant="outline" size="sm" onClick={() => {
+              if (columnOptions.length > 0) {
+                setXAxis(columnOptions[0].name);
+                if (columnOptions.length > 1) {
+                  setYAxis(columnOptions[1].name);
+                } else {
+                  setYAxis(columnOptions[0].name);
+                }
+              }
+            }}>
+              Auto-select axes
+            </Button>
+          </div>
         </div>
       );
     }
 
     if (chartData.length === 0 && pieData.length === 0) {
       return (
-        <div className="flex items-center justify-center h-64 border rounded-md">
-          <p className="text-muted-foreground">No data available with current selections</p>
+        <div className="flex items-center justify-center h-[400px] border rounded-md bg-gray-50">
+          <div className="text-center p-6">
+            <p className="text-muted-foreground mb-2">No data available with current selections</p>
+            <p className="text-xs text-muted-foreground">Try changing filters or selecting different columns</p>
+          </div>
         </div>
       );
     }
@@ -379,24 +397,45 @@ export default function DataExplorer({
     switch (chartType) {
       case 'bar':
         return (
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey={xAxis} />
-                <YAxis />
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey={xAxis} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                />
                 <Tooltip 
                   formatter={(value, name) => [value, name]}
                   labelFormatter={(label) => `${xAxis}: ${label}`}
+                  contentStyle={{ 
+                    borderRadius: '4px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
                 />
-                <Legend />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                />
                 {groupBy && groupBy !== 'none' ? (
                   // If grouped, we need separate bars for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
                     .map((key, index) => (
                       <Bar 
-                        key={`bar-group-${index}-${key.replace(/\W/g, '')}`}
+                        key={`bar-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
                         dataKey={key} 
                         fill={COLORS[index % COLORS.length]} 
                         name={key}
@@ -405,7 +444,7 @@ export default function DataExplorer({
                 ) : (
                   // Simple bar chart
                   <Bar 
-                    key={`bar-simple-${yAxis.replace(/\W/g, '')}`}
+                    key={`bar-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
                     dataKey={yAxis} 
                     fill={COLORS[0]} 
                     name={yAxis} 
@@ -418,40 +457,63 @@ export default function DataExplorer({
         
       case 'line':
         return (
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey={xAxis} />
-                <YAxis />
+              <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey={xAxis} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                />
                 <Tooltip 
                   formatter={(value, name) => [value, name]}
                   labelFormatter={(label) => `${xAxis}: ${label}`}
+                  contentStyle={{ 
+                    borderRadius: '4px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
                 />
-                <Legend />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                />
                 {groupBy && groupBy !== 'none' ? (
                   // If grouped, we need separate lines for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
                     .map((key, index) => (
                       <Line 
-                        key={`line-group-${index}-${key.replace(/\W/g, '')}`}
+                        key={`line-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
                         type="monotone" 
                         dataKey={key} 
                         stroke={COLORS[index % COLORS.length]} 
                         name={key}
-                        activeDot={{ r: 8 }}
+                        activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
+                        strokeWidth={2}
                       />
                     ))
                 ) : (
                   // Simple line chart
                   <Line 
-                    key={`line-simple-${yAxis.replace(/\W/g, '')}`}
+                    key={`line-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
                     type="monotone" 
                     dataKey={yAxis} 
                     stroke={COLORS[0]} 
                     name={yAxis}
-                    activeDot={{ r: 8 }}
+                    activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
+                    strokeWidth={2}
                   />
                 )}
               </LineChart>
@@ -461,41 +523,60 @@ export default function DataExplorer({
         
       case 'scatter':
         return (
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart>
-                <CartesianGrid />
+              <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
                   type="number" 
                   dataKey={xAxis} 
                   name={xAxis} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
                 />
                 <YAxis 
                   type="number" 
                   dataKey={yAxis} 
                   name={yAxis} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
                 />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Legend />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }} 
+                  contentStyle={{ 
+                    borderRadius: '4px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                />
                 {groupBy && groupBy !== 'none' ? (
                   // If grouped, we need separate scatter plots for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
                     .map((key, index) => (
                       <Scatter 
-                        key={`scatter-group-${index}-${key.replace(/\W/g, '')}`}
+                        key={`scatter-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
                         name={key} 
                         data={chartData.filter(item => item[key] !== undefined)} 
                         fill={COLORS[index % COLORS.length]} 
+                        shape="circle"
                       />
                     ))
                 ) : (
                   // Simple scatter plot
                   <Scatter 
-                    key={`scatter-simple-${yAxis.replace(/\W/g, '')}`}
+                    key={`scatter-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
                     name={yAxis} 
                     data={chartData} 
                     fill={COLORS[0]} 
+                    shape="circle"
                   />
                 )}
               </ScatterChart>
@@ -505,26 +586,53 @@ export default function DataExplorer({
         
       case 'pie':
         return (
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
                   labelLine={true}
-                  outerRadius={150}
+                  outerRadius={140}
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  label={({ name, percent }) => 
+                    percent > 0.05 ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
+                  labelLine={{ stroke: '#ccc', strokeWidth: 0.5 }}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}-${entry.name}-${chartType}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                      stroke="#fff"
+                      strokeWidth={1}
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip 
+                  formatter={(value, name, props) => {
+                    if (!props) return [value, name];
+                    return [`${value} (${(props.percent * 100).toFixed(1)}%)`, name];
+                  }}
+                  contentStyle={{ 
+                    borderRadius: '4px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
+                />
+                <Legend 
+                  layout="vertical"
+                  verticalAlign="middle" 
+                  align="right"
+                  wrapperStyle={{ 
+                    fontSize: '12px',
+                    paddingLeft: '20px', 
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

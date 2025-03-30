@@ -25,7 +25,7 @@ import {
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Upload, Download, FileText, AlertTriangle, Info } from 'lucide-react';
+import { Upload, Download, FileText, AlertTriangle, Info, LayoutGrid } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import DataExplorer from './DataExplorer';
 import MultiView from './MultiView';
@@ -225,27 +225,27 @@ export default function DataAnalyzer(): React.ReactElement {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Data Analyzer</h1>
+      <h1 className="text-3xl font-bold mb-6">Data.gov.sg Explorer</h1>
       
       <div className="mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload CSV Data</CardTitle>
+        <Card className="shadow-sm border-gray-200 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <CardTitle className="text-2xl">Upload Data from Data.gov.sg</CardTitle>
             <CardDescription>
-              Upload your CSV file for automated analysis and insights. 
+              Upload CSV files from <a href="https://data.gov.sg" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Data.gov.sg</a> for automated analysis and insights.
               <br/>
               <span className="text-sm text-muted-foreground mt-1">
                 <strong>Note:</strong> All processing is done locally in your browser for privacy.
               </span>
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="flex flex-col gap-4">
               <div 
-                className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-accent/50 transition-colors cursor-pointer"
+                className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-accent/50 transition-colors cursor-pointer bg-slate-50 hover:border-blue-300"
                 onClick={() => document.getElementById('file-upload')?.click()}
               >
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <Upload className="mx-auto h-12 w-12 text-blue-500 mb-4" />
                 <p className="text-lg font-medium">Drag &amp; drop your CSV file here</p>
                 <p className="text-sm text-muted-foreground">or click to browse</p>
                 <input
@@ -259,13 +259,40 @@ export default function DataAnalyzer(): React.ReactElement {
               
               <div className="flex justify-between items-center">
                 {file && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-sm p-2 rounded bg-blue-50 border border-blue-100">
+                    <FileText className="h-4 w-4 text-blue-500" />
                     <span>Selected: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)</span>
                   </div>
                 )}
                 
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-4 text-sm">
+                  <a 
+                    href="https://data.gov.sg/dataset/population-trends" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Population Trends
+                  </a>
+                  <a 
+                    href="https://data.gov.sg/dataset/average-retail-prices-of-selected-items" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Retail Prices
+                  </a>
+                  <a 
+                    href="https://data.gov.sg/dataset/visitor-arrivals" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Tourism Data
+                  </a>
+                </div>
+                
+                <div>
                   <a 
                     href="/sample_data.csv" 
                     download
@@ -286,11 +313,11 @@ export default function DataAnalyzer(): React.ReactElement {
               )}
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="bg-gray-50 border-t px-6 py-4">
             <Button 
               onClick={handleAnalyze} 
               disabled={!file || isAnalyzing}
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {isAnalyzing ? 'Analyzing...' : 'Analyze Data'}
             </Button>
@@ -299,7 +326,7 @@ export default function DataAnalyzer(): React.ReactElement {
       </div>
       
       {isAnalyzing && (
-        <Card className="mb-8">
+        <Card className="mb-8 shadow-sm border-gray-200">
           <CardHeader>
             <CardTitle>Analyzing Data</CardTitle>
             <CardDescription>
@@ -308,7 +335,7 @@ export default function DataAnalyzer(): React.ReactElement {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Progress value={analysisProgress} className="w-full" />
+              <Progress value={analysisProgress} className="w-full h-2" />
               <p className="text-xs text-right text-muted-foreground">{analysisProgress}%</p>
             </div>
           </CardContent>
@@ -317,50 +344,78 @@ export default function DataAnalyzer(): React.ReactElement {
       
       {result && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-sm border-gray-200 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
               <CardTitle>Dataset Summary</CardTitle>
               <CardDescription>
                 Overview of your dataset
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="py-4">
-                    <CardTitle className="text-lg">Rows</CardTitle>
+                <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <CardHeader className="py-4 bg-blue-50">
+                    <CardTitle className="text-lg flex items-center">
+                      <div className="bg-blue-100 p-2 rounded-full mr-2">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                      </div>
+                      Rows
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold">{result.rowCount}</p>
+                  <CardContent className="py-6">
+                    <p className="text-3xl font-bold text-center">{result.rowCount}</p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="py-4">
-                    <CardTitle className="text-lg">Columns</CardTitle>
+                <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <CardHeader className="py-4 bg-purple-50">
+                    <CardTitle className="text-lg flex items-center">
+                      <div className="bg-purple-100 p-2 rounded-full mr-2">
+                        <BarChart className="h-4 w-4 text-purple-600" />
+                      </div>
+                      Columns
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold">{result.columns.length}</p>
+                  <CardContent className="py-6">
+                    <p className="text-3xl font-bold text-center">{result.columns.length}</p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="py-4">
-                    <CardTitle className="text-lg">Insights</CardTitle>
+                <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <CardHeader className="py-4 bg-amber-50">
+                    <CardTitle className="text-lg flex items-center">
+                      <div className="bg-amber-100 p-2 rounded-full mr-2">
+                        <Info className="h-4 w-4 text-amber-600" />
+                      </div>
+                      Insights
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold">{result.insights.length}</p>
+                  <CardContent className="py-6">
+                    <p className="text-3xl font-bold text-center">{result.insights.length}</p>
                   </CardContent>
                 </Card>
               </div>
             </CardContent>
           </Card>
           
-          <Tabs defaultValue="explore">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="explore">Explore Data</TabsTrigger>
-              <TabsTrigger value="multiview">Multiple Views</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="columns">Columns</TabsTrigger>
-              <TabsTrigger value="forecast">
+          <Tabs defaultValue="explore" className="shadow-sm border rounded-lg overflow-hidden">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-50 p-0 h-auto">
+              <TabsTrigger value="explore" className="py-3 data-[state=active]:bg-white rounded-none border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none">
+                <FileText className="h-4 w-4 mr-2" />
+                Explore Data
+              </TabsTrigger>
+              <TabsTrigger value="multiview" className="py-3 data-[state=active]:bg-white rounded-none border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none">
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Multiple Views
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="py-3 data-[state=active]:bg-white rounded-none border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none">
+                <Info className="h-4 w-4 mr-2" />
+                Insights
+              </TabsTrigger>
+              <TabsTrigger value="columns" className="py-3 data-[state=active]:bg-white rounded-none border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none">
+                <BarChart className="h-4 w-4 mr-2" />
+                Columns
+              </TabsTrigger>
+              <TabsTrigger value="forecast" className="py-3 data-[state=active]:bg-white rounded-none border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none">
+                <LineChart className="h-4 w-4 mr-2" />
                 {result.timeSeries ? 'SARIMA Forecast' : 'Forecast'}
               </TabsTrigger>
             </TabsList>
@@ -380,43 +435,73 @@ export default function DataAnalyzer(): React.ReactElement {
               />
             </TabsContent>
             
-            <TabsContent value="insights" className="space-y-4 mt-4 overflow-hidden">
+            <TabsContent value="insights" className="space-y-4 mt-4 overflow-hidden p-4">
               {result.insights.map((insight: DataInsight, index: number) => (
-                <Card key={index} className="overflow-hidden">
-                  <CardHeader>
+                <Card key={index} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200">
+                  <CardHeader className="bg-slate-50 border-b">
                     <div className="flex justify-between items-start">
-                      <CardTitle>{insight.title}</CardTitle>
-                      <div className="px-2 py-1 bg-primary/10 rounded-full text-xs">
+                      <CardTitle className="flex items-center">
+                        <div className="bg-blue-100 p-1.5 rounded-full mr-2">
+                          <Info className="h-4 w-4 text-blue-600" />
+                        </div>
+                        {insight.title}
+                      </CardTitle>
+                      <div className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                         Importance: {insight.importance.toFixed(1)}/10
                       </div>
                     </div>
-                    <CardDescription>
+                    <CardDescription className="mt-2">
                       Related to: {insight.columns.join(', ')}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="mb-4">{insight.description}</p>
-                    {insight.chartType && renderChart(insight)}
+                  <CardContent className="p-6">
+                    <p className="mb-6 text-gray-700">{insight.description}</p>
+                    <div className="rounded-md overflow-hidden border">
+                      {insight.chartType && renderChart(insight)}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
               
               {result.insights.length === 0 && (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No insights were generated for this dataset.</p>
+                <Card className="shadow-sm border border-gray-200">
+                  <CardContent className="p-12 flex flex-col items-center justify-center">
+                    <div className="bg-amber-100 p-3 rounded-full mb-4">
+                      <Info className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <p className="text-lg font-medium text-center mb-2">No insights were generated</p>
+                    <p className="text-muted-foreground text-center">
+                      This dataset may need more data or contain values that are difficult to analyze automatically.
+                    </p>
                   </CardContent>
                 </Card>
               )}
             </TabsContent>
             
-            <TabsContent value="columns" className="space-y-4 mt-4 overflow-hidden">
+            <TabsContent value="columns" className="space-y-4 mt-4 overflow-hidden p-4">
               {result.columns.map((column: DataColumn, index: number) => (
-                <Card key={index}>
-                  <CardHeader>
+                <Card key={index} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200">
+                  <CardHeader className="bg-slate-50 border-b">
                     <div className="flex justify-between items-start">
-                      <CardTitle>{column.name}</CardTitle>
-                      <div className="px-2 py-1 bg-primary/10 rounded-full text-xs">
+                      <CardTitle className="flex items-center">
+                        <div className={`p-1.5 rounded-full mr-2 ${
+                          column.type === 'numeric' ? 'bg-purple-100' : 
+                          column.type === 'categorical' ? 'bg-green-100' : 
+                          column.type === 'datetime' ? 'bg-blue-100' : 'bg-gray-100'
+                        }`}>
+                          <BarChart className={`h-4 w-4 ${
+                            column.type === 'numeric' ? 'text-purple-600' : 
+                            column.type === 'categorical' ? 'text-green-600' : 
+                            column.type === 'datetime' ? 'text-blue-600' : 'text-gray-600'
+                          }`} />
+                        </div>
+                        {column.name}
+                      </CardTitle>
+                      <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                        column.type === 'numeric' ? 'bg-purple-100 text-purple-700' : 
+                        column.type === 'categorical' ? 'bg-green-100 text-green-700' : 
+                        column.type === 'datetime' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
                         {column.type}
                       </div>
                     </div>
