@@ -1,48 +1,50 @@
+'use client';
+
 // @ts-nocheck
 'use client';
 
-import * as React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
-import { 
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
-  ScatterChart, 
-  Scatter, 
-  PieChart, 
-  Pie, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer, 
-  Cell 
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  ScatterChart,
+  Scatter,
+  PieChart,
+  Pie,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
+import {
   ChevronDown,
   ChevronUp,
   Plus,
@@ -57,6 +59,9 @@ import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Separator } from "@/components/ui/separator";
 import { DataColumn } from '@/lib/analysis/dataUtils';
+
+// Define derived type for options for clarity
+type ColumnOption = { name: string; type: DataColumn['type'] };
 
 interface DataExplorerProps {
   data: Record<string, unknown>[];
@@ -93,17 +98,17 @@ interface Sort {
 }
 
 const COLORS = [
-  '#4285F4', '#EA4335', '#FBBC05', '#34A853', '#8AB4F8', '#F6AEA9', 
+  '#4285F4', '#EA4335', '#FBBC05', '#34A853', '#8AB4F8', '#F6AEA9',
   '#FDE293', '#A8DAB5', '#0F9D58', '#DB4437', '#F4B400', '#0F9D58',
   '#137333', '#3949AB', '#43A047', '#039BE5', '#7CB342', '#C0CA33'
 ];
 
-export default function DataExplorer({ 
-  data, 
-  columns, 
-  initialConfig, 
+export default function DataExplorer({
+  data,
+  columns,
+  initialConfig,
   onConfigChange,
-  showControls = true 
+  showControls = true
 }: DataExplorerProps) {
   const [chartType, setChartType] = React.useState<ChartType>(initialConfig?.chartType || 'bar');
   const [xAxis, setXAxis] = React.useState<string>(initialConfig?.xAxis || '');
@@ -117,14 +122,14 @@ export default function DataExplorer({
   );
   const [hasInitializedAxes, setHasInitializedAxes] = React.useState(false);
   const [lastConfigChange, setLastConfigChange] = React.useState<number>(0);
-  
+
   // Create a unique ID for this instance
-  const instanceId = React.useMemo(() => 
+  const instanceId = React.useMemo(() =>
     initialConfig?._uniqueId || `explorer-${Math.random().toString(36).substring(2, 9)}`
   , [initialConfig?._uniqueId]);
 
   // Extract column names and types
-  const columnOptions = React.useMemo(() => {
+  const columnOptions: ColumnOption[] = React.useMemo(() => {
     return columns.map(col => ({
       name: col.name,
       type: col.type
@@ -141,16 +146,16 @@ export default function DataExplorer({
       const shouldUpdateY = !yAxis;
       let newXAxis = xAxis;
       let newYAxis = yAxis;
-      
+
       // Find a categorical column for X-axis
       if (shouldUpdateX) {
-        const categoricalCol = columnOptions.find(col => col.type === 'categorical' || col.type === 'datetime');
+        const categoricalCol = columnOptions.find((col: ColumnOption) => col.type === 'categorical' || col.type === 'datetime');
         newXAxis = categoricalCol ? categoricalCol.name : (columnOptions[0]?.name || '');
       }
 
       // Find a numeric column for Y-axis
       if (shouldUpdateY) {
-        const numericCol = columnOptions.find(col => col.type === 'numeric');
+        const numericCol = columnOptions.find((col: ColumnOption) => col.type === 'numeric');
         newYAxis = numericCol ? numericCol.name : (columnOptions[columnOptions.length > 1 ? 1 : 0]?.name || '');
       }
 
@@ -158,11 +163,11 @@ export default function DataExplorer({
       if (shouldUpdateX && newXAxis) {
         setXAxis(newXAxis);
       }
-      
+
       if (shouldUpdateY && newYAxis) {
         setYAxis(newYAxis);
       }
-      
+
       // Mark as initialized
       setHasInitializedAxes(true);
     }
@@ -172,9 +177,9 @@ export default function DataExplorer({
   const filteredData = React.useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    return data.filter(item => {
+    return data.filter((item: Record<string, unknown>) => {
       // Apply all filters
-      return filters.every(filter => {
+      return filters.every((filter: Filter) => {
         const columnValue = item[filter.column];
         if (columnValue === undefined || columnValue === null) return false;
 
@@ -188,8 +193,8 @@ export default function DataExplorer({
           case 'lessThan':
             return Number(columnValue) < Number(filter.value);
           case 'between':
-            return Number(columnValue) >= Number(filter.value) && 
-                   Number(columnValue) <= Number(filter.value2);
+            return Number(columnValue) >= Number(filter.value) &&
+                   Number(columnValue) <= Number(filter.value2 ?? filter.value); // Handle missing value2
           default:
             return true;
         }
@@ -201,7 +206,7 @@ export default function DataExplorer({
   const sortedData = React.useMemo(() => {
     if (!sort) return filteredData;
 
-    return [...filteredData].sort((a, b) => {
+    return [...filteredData].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
       const aValue = a[sort.column];
       const bValue = b[sort.column];
 
@@ -213,9 +218,9 @@ export default function DataExplorer({
       // Convert to strings for comparison
       const aString = String(aValue || '');
       const bString = String(bValue || '');
-      
-      return sort.direction === 'asc' 
-        ? aString.localeCompare(bString) 
+
+      return sort.direction === 'asc'
+        ? aString.localeCompare(bString)
         : bString.localeCompare(aString);
     });
   }, [filteredData, sort]);
@@ -226,21 +231,19 @@ export default function DataExplorer({
 
     // For simple charts without grouping
     if (!groupBy || groupBy === 'none') {
-      // Limit the number of data points
       const limitedData = sortedData.slice(0, limit);
-      
-      return limitedData.map(item => ({
+      // Remove unique ID generation - no longer needed
+      return limitedData.map((item: Record<string, unknown>) => ({
+        // _uniqueDataPointId: `${instanceId}-datapoint-${index}-${String(item[xAxis] ?? 'null').replace(/\W/g, '')}`,
         [xAxis]: item[xAxis],
         [yAxis]: item[yAxis] !== undefined && item[yAxis] !== null ? Number(item[yAxis]) : 0,
-        _original: item // Store original data for tooltips
+        _original: item
       }));
     }
 
     // For grouped data
     const grouped: Record<string, Record<string, unknown>[]> = {};
-    
-    // Group the data
-    sortedData.forEach(item => {
+    sortedData.forEach((item: Record<string, unknown>) => {
       const key = String(item[groupBy] || 'Unknown');
       if (!grouped[key]) {
         grouped[key] = [];
@@ -249,30 +252,28 @@ export default function DataExplorer({
     });
 
     // Aggregate the data for each group
+    // Use Record<string, any> for flexibility, recharts handles various data structures
     return Object.entries(grouped).map(([groupKey, groupItems]) => {
-      const xValue = groupItems[0][xAxis]; // Take the first item's xAxis value
-      
-      // Compute aggregated values
-      const aggregated: Record<string, number> = { [xAxis]: xValue };
-      
-      // Add the aggregated value based on selected method
+      const xValue = groupItems[0] ? groupItems[0][xAxis] : undefined; // Handle empty groupItems
+      const aggregated: Record<string, any> = {
+        [xAxis]: xValue
+      };
+
       if (aggregation === 'sum') {
-        aggregated[groupKey] = groupItems.reduce((sum, item) => 
-          sum + (Number(item[yAxis]) || 0), 0);
+        aggregated[groupKey] = groupItems.reduce((sum, item) => sum + (Number(item[yAxis]) || 0), 0);
       } else if (aggregation === 'avg') {
-        aggregated[groupKey] = groupItems.reduce((sum, item) => 
-          sum + (Number(item[yAxis]) || 0), 0) / groupItems.length;
+        aggregated[groupKey] = groupItems.length > 0 ? groupItems.reduce((sum, item) => sum + (Number(item[yAxis]) || 0), 0) / groupItems.length : 0;
       } else if (aggregation === 'count') {
         aggregated[groupKey] = groupItems.length;
       } else if (aggregation === 'min') {
-        aggregated[groupKey] = Math.min(...groupItems.map(item => Number(item[yAxis]) || 0));
+        aggregated[groupKey] = groupItems.length > 0 ? Math.min(...groupItems.map(item => Number(item[yAxis]) || Infinity)) : 0;
       } else if (aggregation === 'max') {
-        aggregated[groupKey] = Math.max(...groupItems.map(item => Number(item[yAxis]) || 0));
+        aggregated[groupKey] = groupItems.length > 0 ? Math.max(...groupItems.map(item => Number(item[yAxis]) || -Infinity)) : 0;
       }
-      
+
       return aggregated;
     });
-  }, [sortedData, xAxis, yAxis, groupBy, aggregation, limit]);
+  }, [sortedData, xAxis, yAxis, groupBy, aggregation, limit, instanceId]); // Removed instanceId as it's not used in keys anymore
 
   // For pie charts, prepare data differently
   const pieData = React.useMemo(() => {
@@ -280,8 +281,8 @@ export default function DataExplorer({
 
     // Group by the xAxis and aggregate yAxis values
     const aggregated: Record<string, number> = {};
-    
-    sortedData.slice(0, limit).forEach(item => {
+
+    sortedData.slice(0, limit).forEach((item: Record<string, unknown>) => {
       const key = String(item[xAxis] || 'Unknown');
       if (!aggregated[key]) {
         aggregated[key] = 0;
@@ -299,32 +300,32 @@ export default function DataExplorer({
   // Add a new filter
   const addFilter = () => {
     if (columnOptions.length === 0) return;
-    
+
     const newFilter: Filter = {
       id: `filter-${Date.now()}`,
       column: columnOptions[0].name,
       operator: 'equals',
       value: ''
     };
-    
+
     setFilters([...filters, newFilter]);
   };
 
   // Remove a filter
   const removeFilter = (id: string) => {
-    setFilters(filters.filter(f => f.id !== id));
+    setFilters(filters.filter((f: Filter) => f.id !== id));
   };
 
   // Update filter
   const updateFilter = (id: string, changes: Partial<Filter>) => {
-    setFilters(filters.map(filter => 
+    setFilters(filters.map((filter: Filter) =>
       filter.id === id ? { ...filter, ...changes } : filter
     ));
   };
 
   // Generate appropriate operator options based on column type
   const getOperatorOptions = (columnName: string) => {
-    const column = columnOptions.find(col => col.name === columnName);
+    const column = columnOptions.find((col: ColumnOption) => col.name === columnName);
     if (!column) return [];
 
     if (column.type === 'numeric') {
@@ -340,14 +341,17 @@ export default function DataExplorer({
         { value: 'contains', label: 'Contains' }
       ];
     } else if (column.type === 'datetime') {
+      // Assuming datetime is handled like strings/categoricals for simple filters here
       return [
         { value: 'equals', label: 'Equals' },
-        { value: 'greaterThan', label: 'After' },
-        { value: 'lessThan', label: 'Before' },
-        { value: 'between', label: 'Between' }
+        { value: 'contains', label: 'Contains' } // Adjust if specific date operators needed
+        // { value: 'greaterThan', label: 'After' },
+        // { value: 'lessThan', label: 'Before' },
+        // { value: 'between', label: 'Between' }
       ];
     }
 
+    // Default for unknown or text types
     return [
       { value: 'equals', label: 'Equals' },
       { value: 'contains', label: 'Contains' }
@@ -359,8 +363,8 @@ export default function DataExplorer({
     if (!sort || sort.column !== columnName) {
       setSort({ column: columnName, direction: 'asc' });
     } else {
-      setSort(sort.direction === 'asc' 
-        ? { column: columnName, direction: 'desc' } 
+      setSort(sort.direction === 'asc'
+        ? { column: columnName, direction: 'desc' }
         : null);
     }
   };
@@ -407,43 +411,43 @@ export default function DataExplorer({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey={xAxis} 
+                <XAxis
+                  dataKey={xAxis}
                   tick={{ fill: '#666', fontSize: 12 }}
                   tickLine={{ stroke: '#ccc' }}
                   axisLine={{ stroke: '#ccc' }}
                   angle={-45}
                   textAnchor="end"
                   height={80}
+                  interval={0}
                 />
-                <YAxis 
+                <YAxis
                   tick={{ fill: '#666', fontSize: 12 }}
                   tickLine={{ stroke: '#ccc' }}
                   axisLine={{ stroke: '#ccc' }}
                 />
-                <Tooltip 
-                  formatter={(value, name) => [value, name]}
-                  labelFormatter={(label) => `${xAxis}: ${label}`}
-                  contentStyle={{ 
-                    borderRadius: '4px', 
+                <Tooltip
+                  formatter={(value: any, name: string) => [value, name]}
+                  labelFormatter={(label: any) => `${xAxis}: ${label}`}
+                  contentStyle={{
+                    borderRadius: '4px',
                     border: '1px solid #e2e8f0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}
                 />
-                <Legend 
-                  verticalAlign="top" 
+                <Legend
+                  verticalAlign="top"
                   height={36}
                   wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
                 />
                 {groupBy && groupBy !== 'none' ? (
-                  // If grouped, we need separate bars for each group
+                  // If grouped, key just by the dataKey (`key`)
                   Object.keys(chartData[0] || {})
-                    .filter(key => key !== xAxis && key !== '_original')
+                    .filter(key => key !== xAxis && key !== '_original') 
                     .map((key, index) => {
-                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
                       return (
                         <Bar 
-                          key={`bar-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          key={key} // SIMPLIFIED Key for grouped bars
                           dataKey={key} 
                           fill={COLORS[index % COLORS.length]} 
                           name={key}
@@ -452,9 +456,9 @@ export default function DataExplorer({
                       );
                     })
                 ) : (
-                  // Simple bar chart
+                  // Simple bar chart, key just by the dataKey (`yAxis`)
                   <Bar 
-                    key={`bar-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
+                    key={yAxis} // SIMPLIFIED Key for simple bar
                     dataKey={yAxis} 
                     fill={COLORS[0]} 
                     name={yAxis}
@@ -500,15 +504,13 @@ export default function DataExplorer({
                   height={36}
                   wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
                 />
-                {groupBy && groupBy !== 'none' ? (
+                 {groupBy && groupBy !== 'none' ? (
                   // If grouped, we need separate lines for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
-                    .map((key, index) => {
-                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-                      return (
+                    .map((key, index) => (
                         <Line 
-                          key={`line-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          key={key} // Simplified Key
                           type="monotone" 
                           dataKey={key} 
                           stroke={COLORS[index % COLORS.length]} 
@@ -517,12 +519,12 @@ export default function DataExplorer({
                           strokeWidth={2}
                           isAnimationActive={false}
                         />
-                      );
-                    })
+                      )
+                    )
                 ) : (
                   // Simple line chart
                   <Line 
-                    key={`line-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
+                    key={yAxis} // Simplified Key
                     type="monotone" 
                     dataKey={yAxis} 
                     stroke={COLORS[0]} 
@@ -572,27 +574,25 @@ export default function DataExplorer({
                   height={36}
                   wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
                 />
-                {groupBy && groupBy !== 'none' ? (
+                 {groupBy && groupBy !== 'none' ? (
                   // If grouped, we need separate scatter plots for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
-                    .map((key, index) => {
-                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-                      return (
+                    .map((key, index) => (
                         <Scatter 
-                          key={`scatter-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          key={key} // Simplified Key
                           name={key} 
                           data={chartData.filter(item => item[key] !== undefined)} 
                           fill={COLORS[index % COLORS.length]} 
                           shape="circle"
                           isAnimationActive={false}
                         />
-                      );
-                    })
+                      )
+                    )
                 ) : (
                   // Simple scatter plot
                   <Scatter 
-                    key={`scatter-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
+                    key={`${xAxis}-${yAxis}`} // Simplified Key based on axes
                     name={yAxis} 
                     data={chartData} 
                     fill={COLORS[0]} 
@@ -610,7 +610,7 @@ export default function DataExplorer({
           <div className="w-full h-[400px] border rounded-md p-2 bg-white">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <Pie
+                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
@@ -623,17 +623,15 @@ export default function DataExplorer({
                     percent > 0.05 ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
                   isAnimationActive={false}
                 >
-                  {pieData.map((entry, index) => {
-                    const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-                    return (
+                  {pieData.map((entry, index) => (
                       <Cell 
-                        key={`cell-${instanceId}-${index}-${uniqueSuffix}`} 
+                        key={`cell-${index}-${entry.name.replace(/\W/g, '')}`} // Use index and name for cell key
                         fill={COLORS[index % COLORS.length]} 
                         stroke="#fff"
                         strokeWidth={1}
                       />
-                    );
-                  })}
+                    )
+                  )}
                 </Pie>
                 <Tooltip 
                   formatter={(value, name, props) => {
@@ -973,7 +971,7 @@ export default function DataExplorer({
             )}
 
             {/* Main chart area - adjust cols based on whether controls are shown */}
-            <div className={`md:col-span-${showControls ? '9' : '12'} w-full overflow-hidden`}>
+            <div className={`md:col-span-${showControls ? '9' : '12'} w-full`}>
               <Tabs defaultValue="chart" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="chart">Chart</TabsTrigger>
@@ -992,7 +990,7 @@ export default function DataExplorer({
                       <thead className="bg-muted sticky top-0">
                         <tr>
                           {columnOptions.map((col, colIndex) => (
-                            <th key={`header-${colIndex}-${col.name.replace(/\W/g, '')}`} className="p-2 text-left font-medium">
+                            <th key={`header-${colIndex}-${col.name.replace(/W/g, '')}`} className="p-2 text-left font-medium">
                               <div 
                                 className="flex items-center gap-1 cursor-pointer" 
                                 onClick={() => toggleSort(col.name)}
@@ -1011,8 +1009,8 @@ export default function DataExplorer({
                       <tbody>
                         {sortedData.slice(0, limit).map((row, rowIndex) => (
                           <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-muted/20'}>
-                            {columnOptions.map((col, colIndex) => (
-                              <td key={`cell-${rowIndex}-${colIndex}-${col.name.replace(/\W/g, '')}`} className="p-2 border-t">
+                            {columnOptions.map((col) => (
+                              <td key={`cell-${rowIndex}-${col.name.replace(/W/g, '')}`} className="p-2 border-t">
                                 {row[col.name] !== undefined ? String(row[col.name]) : '-'}
                               </td>
                             ))}

@@ -497,7 +497,7 @@ export default function DataAnalyzer(): React.ReactElement {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="explore" className="mt-4 overflow-hidden">
+            <TabsContent value="explore" className="mt-4">
               <DataExplorer 
                 data={getRowData()}
                 columns={result.columns}
