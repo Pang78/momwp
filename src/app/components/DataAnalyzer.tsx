@@ -3,6 +3,7 @@
 
 // @ts-expect-error - React types are properly available at runtime
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { analyzeData, AnalysisResult, DataInsight, DataColumn } from '@/lib/analysis/dataUtils';
@@ -25,17 +26,28 @@ import {
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Upload, Download, FileText, AlertTriangle, Info, LayoutGrid } from 'lucide-react';
+import { Upload, Download, FileText, AlertTriangle, Info, LayoutGrid, ArrowLeft } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import DataExplorer from './DataExplorer';
 import MultiView from './MultiView';
 
 export default function DataAnalyzer(): React.ReactElement {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleBackToHome = () => {
+    console.log('Navigating back to home from DataAnalyzer');
+    try {
+      router.push('/');
+    } catch (e) {
+      console.error('Router navigation failed, using window.location', e);
+      window.location.href = '/';
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -302,7 +314,17 @@ export default function DataAnalyzer(): React.ReactElement {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Data.gov.sg Explorer</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Data.gov.sg Explorer</h1>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={handleBackToHome}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Button>
+      </div>
       
       <div className="mb-8">
         <Card className="shadow-sm border-gray-200 overflow-hidden">
@@ -502,6 +524,7 @@ export default function DataAnalyzer(): React.ReactElement {
                 data={getRowData()}
                 columns={result.columns}
                 showControls={true}
+                onBack={handleBackToHome}
               />
             </TabsContent>
             

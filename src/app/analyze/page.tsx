@@ -1,9 +1,35 @@
+'use client';
+
 import DataAnalyzer from '@/app/components/DataAnalyzer';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function AnalyzePage() {
+  const router = useRouter();
+
+  const goToHomePage = () => {
+    console.log('Navigating to home from Analyze page');
+    try {
+      router.push('/');
+    } catch (e) {
+      console.error('Router navigation failed, using window.location', e);
+      window.location.href = '/';
+    }
+  };
+
   return (
-    <main className="container mx-auto p-4 md:p-8 lg:p-12">
+    <main className="container mx-auto p-4 md:p-8 lg:p-12 pt-20">
       <div className="mb-8 max-w-4xl mx-auto">
+        <Button 
+          variant="outline" 
+          onClick={goToHomePage} 
+          className="mb-4 flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          Back to Home
+        </Button>
+        
         <h1 className="text-4xl font-bold mb-4">Data Analysis Tool</h1>
         <p className="text-xl text-gray-600 mb-6">
           Upload CSV data for AI-powered analysis, including statistical insights, correlations, and forecasting.

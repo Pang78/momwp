@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+// @ts-expect-error - Recharts types are properly available at runtime
 import {
   BarChart,
   Bar,
@@ -44,21 +45,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+// Import the exact icons we need from lucide-react
 import {
-  ChevronDown,
-  ChevronUp,
+  ArrowLeft,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Plus,
   X,
-  BarChart2,
+  BarChart3,
   LineChart as LineChartIcon,
   PieChart as PieChartIcon,
-  ScatterChart as ScatterChartIcon,
+  CircleDashed,
   Download
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Separator } from "@/components/ui/separator";
 import { DataColumn } from '@/lib/analysis/dataUtils';
+import { useRouter } from 'next/navigation';
 
 // Define derived type for options for clarity
 type ColumnOption = { name: string; type: DataColumn['type'] };
@@ -78,6 +83,7 @@ interface DataExplorerProps {
   };
   onConfigChange?: (config: Record<string, unknown>) => void;
   showControls?: boolean;
+  onBack?: () => void; // Add onBack callback
 }
 
 type ChartType = 'bar' | 'line' | 'scatter' | 'pie';
@@ -108,8 +114,10 @@ export default function DataExplorer({
   columns,
   initialConfig,
   onConfigChange,
-  showControls = true
+  showControls = true,
+  onBack // Add onBack parameter
 }: DataExplorerProps) {
+  const router = useRouter();
   const [chartType, setChartType] = React.useState<ChartType>(initialConfig?.chartType || 'bar');
   const [xAxis, setXAxis] = React.useState<string>(initialConfig?.xAxis || '');
   const [yAxis, setYAxis] = React.useState<string>(initialConfig?.yAxis || '');
@@ -730,16 +738,44 @@ export default function DataExplorer({
     lastConfigChange
   ]);
 
+  // Add a robust navigation function
+  const navigateToHome = () => {
+    console.log('Navigating to home from DataExplorer');
+    try {
+      router.push('/');
+    } catch (e) {
+      console.error('Router navigation failed, using window.location', e);
+      window.location.href = '/';
+    }
+  };
+
   return (
     <div className="w-full space-y-4">
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Data Explorer</CardTitle>
-              <CardDescription>
-                Visualize and explore your data interactively
-              </CardDescription>
+            <div className="flex items-center gap-2">
+              {/* Add a dedicated back button with fallback */}
+              {onBack ? (
+                <Button variant="ghost" size="icon" onClick={onBack} className="mr-2">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={navigateToHome} 
+                  className="mr-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+              <div>
+                <CardTitle>Data Explorer</CardTitle>
+                <CardDescription>
+                  Visualize and explore your data interactively
+                </CardDescription>
+              </div>
             </div>
             <Button 
               variant="outline" 
@@ -761,13 +797,13 @@ export default function DataExplorer({
                   <Label>Chart Type</Label>
                   <ToggleGroup type="single" value={chartType} onValueChange={(value) => value && setChartType(value as ChartType)}>
                     <ToggleGroupItem value="bar" aria-label="Bar Chart">
-                      <BarChart2 className="h-4 w-4" />
+                      <BarChart3 className="h-4 w-4" />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="line" aria-label="Line Chart">
                       <LineChartIcon className="h-4 w-4" />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="scatter" aria-label="Scatter Chart">
-                      <ScatterChartIcon className="h-4 w-4" />
+                      <CircleDashed className="h-4 w-4" />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="pie" aria-label="Pie Chart">
                       <PieChartIcon className="h-4 w-4" />
@@ -997,9 +1033,7 @@ export default function DataExplorer({
                               >
                                 {col.name}
                                 {sort?.column === col.name && (
-                                  sort.direction === 'asc' 
-                                    ? <ChevronUp className="h-3 w-3" /> 
-                                    : <ChevronDown className="h-3 w-3" />
+                                  <ArrowUpDown className="h-3 w-3" />
                                 )}
                               </div>
                             </th>
