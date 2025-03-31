@@ -123,26 +123,50 @@ export default function DataAnalyzer(): React.ReactElement {
       }
     }
     
-    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00C49F'];
+    const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#8AB4F8', '#F6AEA9'];
     
     switch (insight.chartType) {
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={insight.columns.length > 1 ? insight.columns[0] : "index"} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {insight.columns.slice(0, 3).map((column, idx) => (
-                <Bar 
-                  key={column} 
-                  dataKey={column} 
-                  name={column}
-                  fill={colors[idx % colors.length]} 
-                />
-              ))}
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey={insight.columns.length > 1 ? insight.columns[0] : "index"} 
+                tick={{ fill: '#666', fontSize: 12 }}
+                tickLine={{ stroke: '#ccc' }}
+                axisLine={{ stroke: '#ccc' }}
+              />
+              <YAxis 
+                tick={{ fill: '#666', fontSize: 12 }}
+                tickLine={{ stroke: '#ccc' }}
+                axisLine={{ stroke: '#ccc' }}
+              />
+              <Tooltip 
+                formatter={(value, name) => [value, name]}
+                contentStyle={{ 
+                  borderRadius: '4px', 
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                }}
+              />
+              <Legend 
+                verticalAlign="top" 
+                height={36}
+                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+              />
+              {insight.columns.slice(0, 3).map((column, idx) => {
+                const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                return (
+                  <Bar 
+                    key={`bar-insight-${idx}-${column.replace(/\W/g, '')}-${uniqueSuffix}`} 
+                    dataKey={column} 
+                    name={column}
+                    fill={colors[idx % colors.length]} 
+                    isAnimationActive={false}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         );
@@ -150,22 +174,47 @@ export default function DataAnalyzer(): React.ReactElement {
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={insight.columns.length > 1 ? insight.columns[0] : "index"} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {insight.columns.slice(insight.columns.length > 1 ? 1 : 0).map((column, idx) => (
-                <Line 
-                  key={column}
-                  type="monotone" 
-                  dataKey={column} 
-                  name={column}
-                  stroke={colors[idx % colors.length]} 
-                  activeDot={{ r: 8 }}
-                />
-              ))}
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey={insight.columns.length > 1 ? insight.columns[0] : "index"} 
+                tick={{ fill: '#666', fontSize: 12 }}
+                tickLine={{ stroke: '#ccc' }}
+                axisLine={{ stroke: '#ccc' }}
+              />
+              <YAxis 
+                tick={{ fill: '#666', fontSize: 12 }}
+                tickLine={{ stroke: '#ccc' }}
+                axisLine={{ stroke: '#ccc' }}
+              />
+              <Tooltip 
+                formatter={(value, name) => [value, name]}
+                contentStyle={{ 
+                  borderRadius: '4px', 
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                }}
+              />
+              <Legend 
+                verticalAlign="top" 
+                height={36}
+                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+              />
+              {insight.columns.slice(insight.columns.length > 1 ? 1 : 0).map((column, idx) => {
+                const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                return (
+                  <Line 
+                    key={`line-insight-${idx}-${column.replace(/\W/g, '')}-${uniqueSuffix}`}
+                    type="monotone" 
+                    dataKey={column} 
+                    name={column}
+                    stroke={colors[idx % colors.length]} 
+                    activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         );
@@ -175,16 +224,44 @@ export default function DataAnalyzer(): React.ReactElement {
         if (insight.columns.length >= 2) {
           return (
             <ResponsiveContainer width="100%" height={300}>
-              <ScatterChart>
-                <CartesianGrid />
-                <XAxis dataKey={insight.columns[0]} type="number" name={insight.columns[0]} />
-                <YAxis dataKey={insight.columns[1]} type="number" name={insight.columns[1]} />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Legend />
+              <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey={insight.columns[0]} 
+                  type="number" 
+                  name={insight.columns[0]} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                />
+                <YAxis 
+                  dataKey={insight.columns[1]} 
+                  type="number" 
+                  name={insight.columns[1]} 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickLine={{ stroke: '#ccc' }}
+                  axisLine={{ stroke: '#ccc' }}
+                />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }} 
+                  contentStyle={{ 
+                    borderRadius: '4px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                />
                 <Scatter 
+                  key={`scatter-insight-${insight.columns[0].replace(/\W/g, '')}-${insight.columns[1].replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
                   name={`${insight.columns[0]} vs ${insight.columns[1]}`} 
                   data={chartData} 
                   fill={colors[0]} 
+                  shape="circle"
+                  isAnimationActive={false}
                 />
               </ScatterChart>
             </ResponsiveContainer>

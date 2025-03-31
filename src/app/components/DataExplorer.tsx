@@ -69,6 +69,7 @@ interface DataExplorerProps {
     groupBy?: string;
     sort?: Sort | null;
     aggregation?: 'sum' | 'avg' | 'count' | 'min' | 'max';
+    _uniqueId?: string; // Unique identifier to prevent key collisions
   };
   onConfigChange?: (config: Record<string, unknown>) => void;
   showControls?: boolean;
@@ -116,6 +117,11 @@ export default function DataExplorer({
   );
   const [hasInitializedAxes, setHasInitializedAxes] = React.useState(false);
   const [lastConfigChange, setLastConfigChange] = React.useState<number>(0);
+  
+  // Create a unique ID for this instance
+  const instanceId = React.useMemo(() => 
+    initialConfig?._uniqueId || `explorer-${Math.random().toString(36).substring(2, 9)}`
+  , [initialConfig?._uniqueId]);
 
   // Extract column names and types
   const columnOptions = React.useMemo(() => {
@@ -433,21 +439,26 @@ export default function DataExplorer({
                   // If grouped, we need separate bars for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
-                    .map((key, index) => (
-                      <Bar 
-                        key={`bar-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
-                        dataKey={key} 
-                        fill={COLORS[index % COLORS.length]} 
-                        name={key}
-                      />
-                    ))
+                    .map((key, index) => {
+                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                      return (
+                        <Bar 
+                          key={`bar-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          dataKey={key} 
+                          fill={COLORS[index % COLORS.length]} 
+                          name={key}
+                          isAnimationActive={false}
+                        />
+                      );
+                    })
                 ) : (
                   // Simple bar chart
                   <Bar 
-                    key={`bar-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
+                    key={`bar-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
                     dataKey={yAxis} 
                     fill={COLORS[0]} 
-                    name={yAxis} 
+                    name={yAxis}
+                    isAnimationActive={false}
                   />
                 )}
               </BarChart>
@@ -493,27 +504,32 @@ export default function DataExplorer({
                   // If grouped, we need separate lines for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
-                    .map((key, index) => (
-                      <Line 
-                        key={`line-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
-                        type="monotone" 
-                        dataKey={key} 
-                        stroke={COLORS[index % COLORS.length]} 
-                        name={key}
-                        activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
-                        strokeWidth={2}
-                      />
-                    ))
+                    .map((key, index) => {
+                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                      return (
+                        <Line 
+                          key={`line-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          type="monotone" 
+                          dataKey={key} 
+                          stroke={COLORS[index % COLORS.length]} 
+                          name={key}
+                          activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                        />
+                      );
+                    })
                 ) : (
                   // Simple line chart
                   <Line 
-                    key={`line-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
+                    key={`line-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
                     type="monotone" 
                     dataKey={yAxis} 
                     stroke={COLORS[0]} 
                     name={yAxis}
                     activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
                     strokeWidth={2}
+                    isAnimationActive={false}
                   />
                 )}
               </LineChart>
@@ -560,23 +576,28 @@ export default function DataExplorer({
                   // If grouped, we need separate scatter plots for each group
                   Object.keys(chartData[0] || {})
                     .filter(key => key !== xAxis && key !== '_original')
-                    .map((key, index) => (
-                      <Scatter 
-                        key={`scatter-group-${index}-${key.replace(/\W/g, '')}-${chartType}-${xAxis}`}
-                        name={key} 
-                        data={chartData.filter(item => item[key] !== undefined)} 
-                        fill={COLORS[index % COLORS.length]} 
-                        shape="circle"
-                      />
-                    ))
+                    .map((key, index) => {
+                      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                      return (
+                        <Scatter 
+                          key={`scatter-${instanceId}-${index}-${key.replace(/\W/g, '')}-${uniqueSuffix}`}
+                          name={key} 
+                          data={chartData.filter(item => item[key] !== undefined)} 
+                          fill={COLORS[index % COLORS.length]} 
+                          shape="circle"
+                          isAnimationActive={false}
+                        />
+                      );
+                    })
                 ) : (
                   // Simple scatter plot
                   <Scatter 
-                    key={`scatter-simple-${yAxis.replace(/\W/g, '')}-${chartType}-${xAxis.replace(/\W/g, '')}`}
+                    key={`scatter-${instanceId}-${yAxis.replace(/\W/g, '')}-${Math.random().toString(36).substring(2, 8)}`}
                     name={yAxis} 
                     data={chartData} 
                     fill={COLORS[0]} 
                     shape="circle"
+                    isAnimationActive={false}
                   />
                 )}
               </ScatterChart>
@@ -593,23 +614,26 @@ export default function DataExplorer({
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  labelLine={true}
+                  labelLine={{ stroke: '#ccc', strokeWidth: 0.5 }}
                   outerRadius={140}
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"
                   label={({ name, percent }) => 
                     percent > 0.05 ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
-                  labelLine={{ stroke: '#ccc', strokeWidth: 0.5 }}
+                  isAnimationActive={false}
                 >
-                  {pieData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}-${entry.name}-${chartType}`} 
-                      fill={COLORS[index % COLORS.length]} 
-                      stroke="#fff"
-                      strokeWidth={1}
-                    />
-                  ))}
+                  {pieData.map((entry, index) => {
+                    const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+                    return (
+                      <Cell 
+                        key={`cell-${instanceId}-${index}-${uniqueSuffix}`} 
+                        fill={COLORS[index % COLORS.length]} 
+                        stroke="#fff"
+                        strokeWidth={1}
+                      />
+                    );
+                  })}
                 </Pie>
                 <Tooltip 
                   formatter={(value, name, props) => {
@@ -967,8 +991,8 @@ export default function DataExplorer({
                     <table className="w-full text-sm">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          {columnOptions.map(col => (
-                            <th key={col.name} className="p-2 text-left font-medium">
+                          {columnOptions.map((col, colIndex) => (
+                            <th key={`header-${colIndex}-${col.name.replace(/\W/g, '')}`} className="p-2 text-left font-medium">
                               <div 
                                 className="flex items-center gap-1 cursor-pointer" 
                                 onClick={() => toggleSort(col.name)}
@@ -986,9 +1010,9 @@ export default function DataExplorer({
                       </thead>
                       <tbody>
                         {sortedData.slice(0, limit).map((row, rowIndex) => (
-                          <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-muted/20'}>
-                            {columnOptions.map(col => (
-                              <td key={col.name} className="p-2 border-t">
+                          <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-muted/20'}>
+                            {columnOptions.map((col, colIndex) => (
+                              <td key={`cell-${rowIndex}-${colIndex}-${col.name.replace(/\W/g, '')}`} className="p-2 border-t">
                                 {row[col.name] !== undefined ? String(row[col.name]) : '-'}
                               </td>
                             ))}

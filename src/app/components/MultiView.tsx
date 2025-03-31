@@ -83,7 +83,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
   // Add a new view
   const addView = () => {
     const newView: ViewConfig = {
-      id: `view-${views.length + 1}`,
+      id: `view-${Date.now()}`,
       xAxis: columns.find(c => c.type === 'categorical' || c.type === 'datetime')?.name || columns[0]?.name || '',
       yAxis: columns.find(c => c.type === 'numeric')?.name || columns[0]?.name || '',
       chartType: 'bar',
@@ -114,7 +114,7 @@ export default function MultiView({ data, columns }: MultiViewProps) {
     
     const newView: ViewConfig = {
       ...viewToDuplicate,
-      id: `view-${views.length + 1}`,
+      id: `view-${Date.now()}`,
       title: `${viewToDuplicate.title} (Copy)`
     };
     
@@ -143,8 +143,12 @@ export default function MultiView({ data, columns }: MultiViewProps) {
     }
   };
 
-  // Get visible views
-  const visibleViews = views.slice(0, getVisibleViewsCount());
+  // Get visible views with stable IDs
+  const visibleViews = views.slice(0, getVisibleViewsCount()).map(view => ({
+    ...view,
+    // Generate stable suffixes for chart elements
+    chartId: `view-${view.id}-${view.chartType}`
+  }));
 
   return (
     <div className="w-full space-y-4">
@@ -212,7 +216,11 @@ export default function MultiView({ data, columns }: MultiViewProps) {
                 <DataExplorer 
                   data={data}
                   columns={columns}
-                  initialConfig={views.find(v => v.id === expandedView) as ViewConfig}
+                  initialConfig={{
+                    ...views.find(v => v.id === expandedView) as ViewConfig,
+                    // Add unique identifier to config to avoid key collisions
+                    _uniqueId: `expanded-${expandedView}`
+                  }}
                   onConfigChange={(config) => {
                     updateView(expandedView, config);
                   }}
@@ -266,7 +274,11 @@ export default function MultiView({ data, columns }: MultiViewProps) {
                   <DataExplorer 
                     data={data}
                     columns={columns}
-                    initialConfig={view}
+                    initialConfig={{
+                      ...view,
+                      // Add unique identifier to config to avoid key collisions
+                      _uniqueId: `grid-${view.id}-${view.chartId}`
+                    }}
                     onConfigChange={(config) => {
                       updateView(view.id, config);
                     }}
