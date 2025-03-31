@@ -344,7 +344,7 @@ export default function DataAnalyzer(): React.ReactElement {
                 
                 <div className="flex items-center gap-4 text-sm">
                   <a 
-                    href="https://data.gov.sg/dataset/population-trends" 
+                    href="https://data.gov.sg/datasets?query=+Indicators+On+Population,+Annual&page=1&resultId=d_3d227e5d9fdec73f3bcadce671c333a6" 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline"
@@ -352,7 +352,7 @@ export default function DataAnalyzer(): React.ReactElement {
                     Population Trends
                   </a>
                   <a 
-                    href="https://data.gov.sg/dataset/average-retail-prices-of-selected-items" 
+                    href="https://data.gov.sg/datasets?query=retail+price&page=1&resultId=d_187e354026aabe4798383bf6230940f2" 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline"
@@ -360,7 +360,7 @@ export default function DataAnalyzer(): React.ReactElement {
                     Retail Prices
                   </a>
                   <a 
-                    href="https://data.gov.sg/dataset/visitor-arrivals" 
+                    href="https://data.gov.sg/datasets?query=tourism&page=1&resultId=d_7e7b2ee60c6ffc962f80fef129cf306e" 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline"
