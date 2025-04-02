@@ -18,7 +18,10 @@ import {
   PlusIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  InformationCircleIcon,
+  QuestionMarkCircleIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { ChartBarSquareIcon } from '@heroicons/react/24/solid';
 
@@ -100,6 +103,9 @@ type FilterOperator = 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'betw
 type SortDirection = 'asc' | 'desc';
 type AggregationType = 'sum' | 'avg' | 'count' | 'min' | 'max' | 'median';
 
+// Add the chart template type
+type ChartTemplate = 'basic' | 'stacked' | 'percentage' | 'comparison';
+
 // Define the component props
 interface DataExplorerProps {
   data: Record<string, unknown>[];
@@ -177,6 +183,165 @@ const COLOR_SCHEMES = {
 // Use for typing the color scheme keys
 type ColorScheme = keyof typeof COLOR_SCHEMES;
 
+// Add the GuidePanel component after the imports and before the DataExplorer component
+interface GuidePanelProps {
+  chartType: ChartType;
+  xAxis: string;
+  yAxis: string;
+  data: any[];
+  error: string | null;
+  onApplySuggestion: (suggestion: { xAxis?: string; yAxis?: string; chartType?: ChartType }) => void;
+  columnOptions: ColumnOption[];
+}
+
+const GuidePanel: React.FC<GuidePanelProps> = ({ 
+  chartType, 
+  xAxis, 
+  yAxis, 
+  data, 
+  error, 
+  onApplySuggestion,
+  columnOptions
+}) => {
+  // Check common issues
+  const hasNumericXAxis = React.useMemo(() => {
+    const col = columnOptions.find(c => c.name === xAxis);
+    return col?.type === 'numeric';
+  }, [xAxis, columnOptions]);
+
+  const hasNumericYAxis = React.useMemo(() => {
+    const col = columnOptions.find(c => c.name === yAxis);
+    return col?.type === 'numeric';
+  }, [yAxis, columnOptions]);
+
+  const hasCategoricalXAxis = React.useMemo(() => {
+    const col = columnOptions.find(c => c.name === xAxis);
+    return col?.type === 'categorical';
+  }, [xAxis, columnOptions]);
+
+  const hasManyCategories = React.useMemo(() => {
+    if (!data.length) return false;
+    const uniqueValues = new Set(data.map(item => item[xAxis]));
+    return uniqueValues.size > 20;
+  }, [data, xAxis]);
+
+  // Generate suggestions
+  const suggestions = React.useMemo(() => {
+    const result = [];
+
+    // If there's an error, add a suggestion
+    if (error) {
+      result.push({
+        title: 'Error Detected',
+        description: error,
+        icon: <ExclamationTriangleIcon className="h-5 w-5 text-destructive" />,
+        action: null
+      });
+    }
+
+    // Chart type suggestions
+    if (chartType === 'pie' && data.length > 15) {
+      result.push({
+        title: 'Too Many Categories',
+        description: 'Pie charts work best with fewer than 15 categories. Consider switching to a bar chart.',
+        icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" />,
+        action: () => onApplySuggestion({ chartType: 'bar' })
+      });
+    }
+
+    if (chartType === 'scatter' && (!hasNumericXAxis || !hasNumericYAxis)) {
+      result.push({
+        title: 'Scatter Plot Needs Numeric Axes',
+        description: 'Scatter plots require numeric values for both X and Y axes.',
+        icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" />,
+        action: () => {
+          const numericColumns = columnOptions.filter(c => c.type === 'numeric');
+          if (numericColumns.length >= 2) {
+            onApplySuggestion({ 
+              xAxis: numericColumns[0].name, 
+              yAxis: numericColumns[1].name 
+            });
+          } else if (numericColumns.length === 1) {
+            onApplySuggestion({ 
+              chartType: 'bar',
+              xAxis: columnOptions[0].name !== numericColumns[0].name ? columnOptions[0].name : (columnOptions[1]?.name || columnOptions[0].name),
+              yAxis: numericColumns[0].name
+            });
+          }
+        }
+      });
+    }
+
+    if (hasManyCategories && (chartType === 'bar' || chartType === 'line')) {
+      result.push({
+        title: 'Many Categories Detected',
+        description: 'Your chart has many categories, which may make it hard to read. Consider filtering or aggregating data.',
+        icon: <SparklesIcon className="h-5 w-5 text-yellow-500" />,
+        action: null
+      });
+    }
+
+    if (!hasNumericYAxis && chartType !== 'pie') {
+      const numericColumn = columnOptions.find(c => c.type === 'numeric');
+      if (numericColumn) {
+        result.push({
+          title: 'Non-Numeric Y-Axis',
+          description: `Charts typically need numeric data for the Y-axis. Switch to ${numericColumn.name}?`,
+          icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" />,
+          action: () => onApplySuggestion({ yAxis: numericColumn.name })
+        });
+      }
+    }
+
+    if (chartType === 'line' && !hasCategoricalXAxis && !hasNumericXAxis) {
+      const categoricalColumn = columnOptions.find(c => c.type === 'categorical');
+      if (categoricalColumn) {
+        result.push({
+          title: 'Line Chart X-Axis',
+          description: 'Line charts work best with categorical or datetime X-axis values that show progression.',
+          icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" />,
+          action: () => onApplySuggestion({ xAxis: categoricalColumn.name })
+        });
+      }
+    }
+
+    return result;
+  }, [chartType, xAxis, yAxis, data, error, columnOptions, hasNumericXAxis, hasNumericYAxis, hasCategoricalXAxis, hasManyCategories, onApplySuggestion]);
+
+  if (suggestions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="border rounded-md p-4 space-y-3 bg-blue-50 dark:bg-blue-900/20">
+      <h4 className="font-medium flex items-center gap-2">
+        <SparklesIcon className="h-5 w-5 text-blue-500" />
+        Chart Suggestions
+      </h4>
+      
+      <div className="space-y-3">
+        {suggestions.map((suggestion, index) => (
+          <div key={index} className="flex items-start gap-2">
+            {suggestion.icon}
+            <div className="flex-1">
+              <p className="text-sm font-medium">{suggestion.title}</p>
+              <p className="text-xs text-muted-foreground">{suggestion.description}</p>
+            </div>
+            {suggestion.action && (
+              <button 
+                onClick={suggestion.action}
+                className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
+              >
+                Apply
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function DataExplorer({
   data,
   columns,
@@ -214,6 +379,10 @@ export default function DataExplorer({
     enableAnimation: false,
     colorScheme: 'default'
   });
+  
+  // New validation state
+  const [validationErrors, setValidationErrors] = React.useState<string[]>([]);
+  const [showGuidePanel, setShowGuidePanel] = React.useState<boolean>(true);
   
   // Search and filtering
   const [searchTerm, setSearchTerm] = React.useState<string>('');
@@ -670,35 +839,40 @@ export default function DataExplorer({
         // Apply aggregation function to y-axis values within the group
         let value: number;
         
-        switch (aggregation) {
-          case 'sum':
-            value = group.reduce((sum, item) => 
-              sum + (Number(item[yAxis]) || 0), 0);
-            break;
-          case 'avg':
-            value = group.reduce((sum, item) => 
-              sum + (Number(item[yAxis]) || 0), 0) / group.length;
-            break;
-          case 'count':
-            value = group.length;
-            break;
-          case 'min':
-            value = Math.min(...group.map(item => Number(item[yAxis]) || 0));
-            break;
-          case 'max':
-            value = Math.max(...group.map(item => Number(item[yAxis]) || 0));
-            break;
-          case 'median': {
-            const values = group.map(item => Number(item[yAxis]) || 0).sort((a, b) => a - b);
-            const mid = Math.floor(values.length / 2);
-            value = values.length % 2 === 0 
-              ? (values[mid - 1] + values[mid]) / 2 
-              : values[mid];
-            break;
+        const numericValues = group
+          .map(item => Number(item[yAxis]))
+          .filter(val => !isNaN(val));
+          
+        if (numericValues.length === 0) {
+          value = 0;
+        } else {
+          switch (aggregation) {
+            case 'sum':
+              value = numericValues.reduce((sum, val) => sum + val, 0);
+              break;
+            case 'avg':
+              value = numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length;
+              break;
+            case 'count':
+              value = numericValues.length;
+              break;
+            case 'min':
+              value = Math.min(...numericValues);
+              break;
+            case 'max':
+              value = Math.max(...numericValues);
+              break;
+            case 'median': {
+              const sorted = [...numericValues].sort((a, b) => a - b);
+              const mid = Math.floor(sorted.length / 2);
+              value = sorted.length % 2 === 0 
+                ? (sorted[mid - 1] + sorted[mid]) / 2 
+                : sorted[mid];
+              break;
+            }
+            default:
+              value = numericValues.reduce((sum, val) => sum + val, 0);
           }
-          default:
-            value = group.reduce((sum, item) => 
-              sum + (Number(item[yAxis]) || 0), 0);
         }
         
         // Store the aggregated value with the group key
@@ -767,6 +941,14 @@ export default function DataExplorer({
   const navigateToHome = React.useCallback(() => {
     router.push('/');
   }, [router]);
+
+  // Add chart template state
+  const [chartTemplate, setChartTemplate] = React.useState<ChartTemplate>('basic');
+  
+  // Toggle guide panel
+  const toggleGuidePanel = React.useCallback(() => {
+    setShowGuidePanel(prev => !prev);
+  }, []);
 
   // Render the chart based on the selected type
   const renderChart = () => {
@@ -841,273 +1023,335 @@ export default function DataExplorer({
       );
     }
     
-    // Common tooltip style for charts - not currently used but kept for future expansion
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const tooltipStyle = {
-      borderRadius: '4px',
-      border: '1px solid #e2e8f0',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      background: '#fff',
-      padding: '8px 12px',
-      fontSize: '12px',
-      color: '#333'
-    };
+    try {
+      // Common tooltip style for charts - not currently used but kept for future expansion
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const tooltipStyle = {
+        borderRadius: '4px',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        background: '#fff',
+        padding: '8px 12px',
+        fontSize: '12px',
+        color: '#333'
+      };
 
-    // For TS/React issues with recharts components, use ts-ignore
-    switch (chartType) {
-      case 'bar':
-        return (
-          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
-            {chartSettings.enableZoom && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="absolute top-2 right-2 z-10"
-                onClick={handleResetZoom}
-                aria-label="Reset zoom"
-              >
-                <ArrowsPointingOutIcon className="h-4 w-4" />
-              </Button>
-            )}
-            <div className="w-full h-full">
-              {chartData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                  >
-                    {chartSettings.showGrid && (
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    )}
-                    <XAxis 
-                      dataKey={xAxis} 
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                    />
-                    <YAxis 
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                    />
-                    <RechartsTooltip
-                      formatter={(value, name) => [formatTooltipValue(value), name]}
-                      contentStyle={{ 
-                        borderRadius: '4px', 
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
-                      }}
-                    />
-                    {chartSettings.showLegend && (
-                      <Legend 
-                        verticalAlign="top" 
-                        height={36}
-                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                      />
-                    )}
-                    <Bar 
-                      dataKey={yAxis} 
-                      name={yAxis}
-                      fill={COLOR_SCHEMES[activeColorScheme][0]} 
-                      isAnimationActive={chartSettings.enableAnimation}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+      // For TS/React issues with recharts components, use ts-ignore
+      switch (chartType) {
+        case 'bar':
+          return (
+            <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+              {chartSettings.enableZoom && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="absolute top-2 right-2 z-10"
+                  onClick={handleResetZoom}
+                  aria-label="Reset zoom"
+                >
+                  <ArrowsPointingOutIcon className="h-4 w-4" />
+                </Button>
               )}
-            </div>
-          </div>
-        );
-      
-      case 'line':
-        return (
-          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
-            {chartSettings.enableZoom && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="absolute top-2 right-2 z-10"
-                onClick={handleResetZoom}
-                aria-label="Reset zoom"
-              >
-                <ArrowsPointingOutIcon className="h-4 w-4" />
-              </Button>
-            )}
-            <div className="w-full h-full">
-              {chartData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                  >
-                    {chartSettings.showGrid && (
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    )}
-                    <XAxis 
-                      dataKey={xAxis} 
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                    />
-                    <YAxis 
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                    />
-                    <RechartsTooltip
-                      formatter={(value, name) => [formatTooltipValue(value), name]}
-                      contentStyle={{ 
-                        borderRadius: '4px', 
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
-                      }}
-                    />
-                    {chartSettings.showLegend && (
-                      <Legend 
-                        verticalAlign="top" 
-                        height={36}
-                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                      />
-                    )}
-                    <Line 
-                      type="monotone"
-                      dataKey={yAxis} 
-                      name={yAxis}
-                      stroke={COLOR_SCHEMES[activeColorScheme][0]} 
-                      isAnimationActive={chartSettings.enableAnimation}
-                      dot={{ fill: COLOR_SCHEMES[activeColorScheme][0] }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        );
-        
-      case 'scatter':
-        return (
-          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
-            {chartSettings.enableZoom && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="absolute top-2 right-2 z-10"
-                onClick={handleResetZoom}
-                aria-label="Reset zoom"
-              >
-                <ArrowsPointingOutIcon className="h-4 w-4" />
-              </Button>
-            )}
-            <div className="w-full h-full">
-              {chartData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart
-                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                  >
-                    {chartSettings.showGrid && (
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    )}
-                    <XAxis 
-                      dataKey={xAxis} 
-                      name={xAxis}
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                      type="number"
-                    />
-                    <YAxis 
-                      dataKey={yAxis}
-                      name={yAxis}
-                      tick={{ fill: '#666', fontSize: 12 }}
-                      tickLine={{ stroke: '#ccc' }}
-                      axisLine={{ stroke: '#ccc' }}
-                      type="number"
-                    />
-                    <RechartsTooltip
-                      formatter={(value, name) => [formatTooltipValue(value), name]}
-                      contentStyle={{ 
-                        borderRadius: '4px', 
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
-                      }}
-                      cursor={{ strokeDasharray: '3 3' }}
-                    />
-                    {chartSettings.showLegend && (
-                      <Legend 
-                        verticalAlign="top" 
-                        height={36}
-                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                      />
-                    )}
-                    <Scatter 
-                      name={`${xAxis} vs ${yAxis}`}
+              <div className="w-full h-full">
+                {chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
                       data={chartData}
-                      fill={COLOR_SCHEMES[activeColorScheme][0]}
-                      isAnimationActive={chartSettings.enableAnimation}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        );
-        
-      case 'pie':
-        const colors = COLOR_SCHEMES[activeColorScheme];
-        return (
-          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
-            <div className="w-full h-full">
-              {pieData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={130}
-                      dataKey="value"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                      labelLine={true}
-                      isAnimationActive={chartSettings.enableAnimation}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                     >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip
-                      formatter={(value, name, props) => [formatTooltipValue(value), props.payload.name]}
-                      contentStyle={{ 
-                        borderRadius: '4px', 
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
-                      }}
-                    />
-                    {chartSettings.showLegend && (
-                      <Legend 
-                        layout="vertical"
-                        align="right"
-                        verticalAlign="middle"
-                        wrapperStyle={{ fontSize: '12px', paddingLeft: '10px' }}
+                      {chartSettings.showGrid && (
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      )}
+                      <XAxis 
+                        dataKey={xAxis} 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                        tickFormatter={(value) => typeof value === 'string' && value.length > 15 ? `${value.substring(0, 15)}...` : value}
                       />
-                    )}
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+                      <YAxis 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                        tickFormatter={formatTooltipValue}
+                      />
+                      <RechartsTooltip
+                        formatter={(value, name) => [formatTooltipValue(value), name]}
+                        contentStyle={{ 
+                          borderRadius: '4px', 
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                        }}
+                      />
+                      {chartSettings.showLegend && (
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36}
+                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                        />
+                      )}
+                      {/* Support different bar chart templates */}
+                      {groupBy && groupBy !== 'none' ? (
+                        // Stacked bars for grouped data
+                        Object.keys(chartData[0] || {})
+                          .filter(key => key !== xAxis && key !== '_original')
+                          .map((key, index) => (
+                            <Bar 
+                              key={`bar-${key}`}
+                              dataKey={key} 
+                              name={key}
+                              stackId="a"
+                              fill={COLOR_SCHEMES[activeColorScheme][index % COLOR_SCHEMES[activeColorScheme].length]} 
+                              isAnimationActive={chartSettings.enableAnimation}
+                            />
+                          ))
+                      ) : (
+                        // Single bar for ungrouped data
+                        <Bar 
+                          dataKey={yAxis} 
+                          name={yAxis}
+                          fill={COLOR_SCHEMES[activeColorScheme][0]} 
+                          isAnimationActive={chartSettings.enableAnimation}
+                        />
+                      )}
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
-          </div>
-        );
+          );
+        
+        case 'line':
+          return (
+            <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+              {chartSettings.enableZoom && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="absolute top-2 right-2 z-10"
+                  onClick={handleResetZoom}
+                  aria-label="Reset zoom"
+                >
+                  <ArrowsPointingOutIcon className="h-4 w-4" />
+                </Button>
+              )}
+              <div className="w-full h-full">
+                {chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={chartData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                    >
+                      {chartSettings.showGrid && (
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      )}
+                      <XAxis 
+                        dataKey={xAxis} 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                      />
+                      <RechartsTooltip
+                        formatter={(value, name) => [formatTooltipValue(value), name]}
+                        contentStyle={{ 
+                          borderRadius: '4px', 
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                        }}
+                      />
+                      {chartSettings.showLegend && (
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36}
+                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                        />
+                      )}
+                      <Line 
+                        type="monotone"
+                        dataKey={yAxis} 
+                        name={yAxis}
+                        stroke={COLOR_SCHEMES[activeColorScheme][0]} 
+                        isAnimationActive={chartSettings.enableAnimation}
+                        dot={{ fill: COLOR_SCHEMES[activeColorScheme][0] }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          );
+          
+        case 'scatter':
+          return (
+            <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+              {chartSettings.enableZoom && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="absolute top-2 right-2 z-10"
+                  onClick={handleResetZoom}
+                  aria-label="Reset zoom"
+                >
+                  <ArrowsPointingOutIcon className="h-4 w-4" />
+                </Button>
+              )}
+              <div className="w-full h-full">
+                {chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                    >
+                      {chartSettings.showGrid && (
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      )}
+                      <XAxis 
+                        dataKey={xAxis} 
+                        name={xAxis}
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                        type="number"
+                      />
+                      <YAxis 
+                        dataKey={yAxis}
+                        name={yAxis}
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        tickLine={{ stroke: '#ccc' }}
+                        axisLine={{ stroke: '#ccc' }}
+                        type="number"
+                      />
+                      <RechartsTooltip
+                        formatter={(value, name) => [formatTooltipValue(value), name]}
+                        contentStyle={{ 
+                          borderRadius: '4px', 
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                        }}
+                        cursor={{ strokeDasharray: '3 3' }}
+                      />
+                      {chartSettings.showLegend && (
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36}
+                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                        />
+                      )}
+                      <Scatter 
+                        name={`${xAxis} vs ${yAxis}`}
+                        data={chartData}
+                        fill={COLOR_SCHEMES[activeColorScheme][0]}
+                        isAnimationActive={chartSettings.enableAnimation}
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          );
+          
+        case 'pie':
+          const colors = COLOR_SCHEMES[activeColorScheme];
+          return (
+            <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+              <div className="w-full h-full">
+                {pieData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={130}
+                        dataKey="value"
+                        nameKey="name"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                        labelLine={true}
+                        isAnimationActive={chartSettings.enableAnimation}
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value, name, props) => [formatTooltipValue(value), props.payload.name]}
+                        contentStyle={{ 
+                          borderRadius: '4px', 
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                        }}
+                      />
+                      {chartSettings.showLegend && (
+                        <Legend 
+                          layout="vertical"
+                          align="right"
+                          verticalAlign="middle"
+                          wrapperStyle={{ fontSize: '12px', paddingLeft: '10px' }}
+                        />
+                      )}
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          );
+        
+        default:
+          return (
+            <div className="flex items-center justify-center h-[400px] border rounded-md bg-gray-50 dark:bg-gray-800">
+              <div className="text-center p-6">
+                <p className="text-muted-foreground mb-2">Invalid chart type selected</p>
+                <Button variant="outline" size="sm" onClick={() => setChartType('bar')}>
+                  Reset to Bar Chart
+                </Button>
+              </div>
+            </div>
+          );
+      }
+    } catch (err) {
+      console.error('Chart rendering error:', err);
       
-      default:
-        return (
-          <div className="flex items-center justify-center h-[400px] border rounded-md bg-gray-50 dark:bg-gray-800">
-            <div className="text-center p-6">
-              <p className="text-muted-foreground mb-2">Invalid chart type selected</p>
-              <Button variant="outline" size="sm" onClick={() => setChartType('bar')}>
-                Reset to Bar Chart
+      // Handle the specific "child cannot have more than 2 values" error
+      if (err instanceof Error && err.message.includes('children with the same key')) {
+        setError("Chart rendering error: Duplicate keys detected in data. Try a different aggregation or grouping.");
+      } else if (err instanceof Error && err.message.includes('children')) {
+        setError("Chart rendering error: Issue with chart components. Try a different chart type or data selection.");
+      } else {
+        setError(`Chart rendering error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      
+      return (
+        <div className="w-full h-[400px] border rounded-md p-4 bg-white dark:bg-gray-800">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-destructive">
+            <ExclamationTriangleIcon className="h-8 w-8" />
+            <p className="font-medium">Chart Rendering Failed</p>
+            <p className="text-sm text-muted-foreground">{error || "An unknown error occurred while rendering the chart"}</p>
+            <div className="mt-3 flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setError(null)}
+              >
+                Dismiss
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => {
+                  setChartType('bar');
+                  setError(null);
+                }}
+              >
+                Try Bar Chart
               </Button>
             </div>
           </div>
-        );
+        </div>
+      );
     }
   };
 
@@ -1292,6 +1536,96 @@ export default function DataExplorer({
     }));
   }, [sortedData.length]);
 
+  // Validate chart data and configuration
+  const validateChartData = React.useCallback(() => {
+    const errors: string[] = [];
+    
+    if (!xAxis || !yAxis) {
+      return errors; // Skip validation if axes aren't selected yet
+    }
+    
+    // Check if data is available
+    if (chartType === 'pie' ? pieData.length === 0 : chartData.length === 0) {
+      errors.push("No data available for the selected axes and filters");
+      return errors;
+    }
+    
+    // Validate based on chart type
+    const xAxisColumn = columns.find(col => col.name === xAxis);
+    const yAxisColumn = columns.find(col => col.name === yAxis);
+    
+    if (!xAxisColumn || !yAxisColumn) {
+      errors.push("Selected axis columns not found in dataset");
+      return errors;
+    }
+    
+    switch (chartType) {
+      case 'scatter':
+        if (xAxisColumn.type !== 'numeric') {
+          errors.push("Scatter plots require numeric X-axis data");
+        }
+        if (yAxisColumn.type !== 'numeric') {
+          errors.push("Scatter plots require numeric Y-axis data");
+        }
+        break;
+        
+      case 'pie':
+        if (pieData.length > 15) {
+          errors.push("Pie chart has too many segments (>15), which may make it hard to read");
+        }
+        break;
+        
+      case 'line':
+        // For line charts, we ideally want a sequential X-axis
+        if (xAxisColumn.type !== 'datetime' && xAxisColumn.type !== 'numeric' && xAxisColumn.type !== 'categorical') {
+          errors.push("Line charts work best with datetime or ordered categorical X-axis");
+        }
+        if (yAxisColumn.type !== 'numeric') {
+          errors.push("Line charts require numeric Y-axis data");
+        }
+        break;
+        
+      case 'bar':
+        if (yAxisColumn.type !== 'numeric') {
+          errors.push("Bar charts typically need numeric Y-axis data");
+        }
+        
+        // Check if there are too many categories
+        if (chartData.length > 50) {
+          errors.push("Bar chart has too many categories (>50), which may impact readability");
+        }
+        break;
+    }
+    
+    return errors;
+  }, [chartType, xAxis, yAxis, columns, chartData, pieData]);
+  
+  // Apply a chart suggestion
+  const applyChartSuggestion = React.useCallback((suggestion: { xAxis?: string; yAxis?: string; chartType?: ChartType }) => {
+    if (suggestion.xAxis) {
+      setXAxis(suggestion.xAxis);
+    }
+    
+    if (suggestion.yAxis) {
+      setYAxis(suggestion.yAxis);
+    }
+    
+    if (suggestion.chartType) {
+      setChartType(suggestion.chartType);
+    }
+    
+    // Clear errors after applying suggestion
+    setError(null);
+  }, []);
+  
+  // Update validation whenever relevant dependencies change
+  React.useEffect(() => {
+    if (xAxis && yAxis) {
+      const errors = validateChartData();
+      setValidationErrors(errors);
+    }
+  }, [xAxis, yAxis, chartType, validateChartData, chartData, pieData]);
+
   return (
     <div className="w-full space-y-4">
       {/* Loading indicator while initializing search index */}
@@ -1339,6 +1673,35 @@ export default function DataExplorer({
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Add guide panel toggle */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleGuidePanel}
+                      className="flex items-center gap-1"
+                    >
+                      {showGuidePanel ? (
+                        <>
+                          <XMarkIcon className="h-4 w-4" />
+                          <span className="sr-only md:not-sr-only md:inline-block">Hide Guide</span>
+                        </>
+                      ) : (
+                        <>
+                          <QuestionMarkCircleIcon className="h-4 w-4" />
+                          <span className="sr-only md:not-sr-only md:inline-block">Show Guide</span>
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{showGuidePanel ? 'Hide Chart Guide' : 'Show Chart Guide'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               {/* Dataset info */}
               <div className="mr-2">
                 <div className="text-xs inline-flex items-center border px-2.5 py-0.5 rounded-full">
@@ -1454,6 +1817,28 @@ export default function DataExplorer({
                   </ToggleGroup>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Chart Template</Label>
+                  <Select 
+                    value={chartTemplate} 
+                    onValueChange={(value: string) => setChartTemplate(value as ChartTemplate)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      {chartType !== 'pie' && (
+                        <>
+                          <SelectItem value="stacked">Stacked</SelectItem>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="comparison">Comparison</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Separator />
 
                 <div className="space-y-2">
@@ -1513,27 +1898,65 @@ export default function DataExplorer({
                   </Select>
                 </div>
 
-                {groupBy && groupBy !== 'none' && (
-                  <div className="space-y-2">
+                {/* Enhanced aggregation section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label>Aggregation</Label>
-                    <Select 
-                      value={aggregation} 
-                      onValueChange={(val: string) => setAggregation(val as AggregationType)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sum">Sum</SelectItem>
-                        <SelectItem value="avg">Average</SelectItem>
-                        <SelectItem value="count">Count</SelectItem>
-                        <SelectItem value="min">Minimum</SelectItem>
-                        <SelectItem value="max">Maximum</SelectItem>
-                        <SelectItem value="median">Median</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-5 w-5">
+                            <InformationCircleIcon className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="w-80">
+                          <p className="text-xs mb-2">Aggregation methods determine how data is combined:</p>
+                          <ul className="text-xs list-disc pl-4 space-y-1">
+                            <li><span className="font-medium">Sum:</span> Adds all values together</li>
+                            <li><span className="font-medium">Average:</span> Calculates the mean of all values</li>
+                            <li><span className="font-medium">Count:</span> Returns the number of data points</li>
+                            <li><span className="font-medium">Minimum:</span> Returns the smallest value</li>
+                            <li><span className="font-medium">Maximum:</span> Returns the largest value</li>
+                            <li><span className="font-medium">Median:</span> Returns the middle value</li>
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Select 
+                    value={aggregation} 
+                    onValueChange={(val: string) => setAggregation(val as AggregationType)}
+                    disabled={!groupBy || groupBy === 'none'}
+                  >
+                    <SelectTrigger className={!groupBy || groupBy === 'none' ? 'opacity-50' : ''}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sum">Sum</SelectItem>
+                      <SelectItem value="avg">Average</SelectItem>
+                      <SelectItem value="count">Count</SelectItem>
+                      <SelectItem value="min">Minimum</SelectItem>
+                      <SelectItem value="max">Maximum</SelectItem>
+                      <SelectItem value="median">Median</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(!groupBy || groupBy === 'none') && (
+                    <p className="text-xs text-muted-foreground">Select a Group By option to enable aggregation</p>
+                  )}
+                </div>
+
+                {groupBy && groupBy !== 'none' && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md mt-2">
+                    <p className="text-xs flex items-center gap-1.5">
+                      <SparklesIcon className="h-3.5 w-3.5 text-blue-500" />
+                      <span>
+                        <span className="font-medium">Active:</span> Grouping by <span className="font-medium">{groupBy}</span> with <span className="font-medium">{aggregation}</span> aggregation
+                      </span>
+                    </p>
                   </div>
                 )}
+
+                <Separator />
 
                 {/* Chart appearance settings */}
                 <div className="space-y-2">
@@ -1750,7 +2173,7 @@ export default function DataExplorer({
             )}
 
             {/* Main chart area - adjust cols based on whether controls are shown */}
-            <div className={`md:col-span-${showControls ? '9' : '12'} w-full`}>
+            <div className={`md:col-span-${showGuidePanel ? '6' : (showControls ? '9' : '12')} w-full`}>
               <Tabs defaultValue="chart" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="chart">Chart</TabsTrigger>
@@ -1759,6 +2182,14 @@ export default function DataExplorer({
                 
                 <TabsContent value="chart" className="w-full">
                   <div className="w-full">
+                    {(groupBy && groupBy !== 'none') && (
+                      <div className="mb-3 bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-sm flex items-center gap-2">
+                        <InformationCircleIcon className="h-5 w-5 text-blue-500" />
+                        <span>
+                          Showing <span className="font-semibold">{aggregation}</span> of <span className="font-semibold">{yAxis}</span> grouped by <span className="font-semibold">{groupBy}</span>
+                        </span>
+                      </div>
+                    )}
                     {renderChart()}
                   </div>
                 </TabsContent>
@@ -1833,6 +2264,209 @@ export default function DataExplorer({
                 </TabsContent>
               </Tabs>
             </div>
+            
+            {/* Guide panel - only show if enabled and there are suggestions */}
+            {showGuidePanel && (
+              <div className="md:col-span-3 w-full">
+                <GuidePanel
+                  chartType={chartType}
+                  xAxis={xAxis}
+                  yAxis={yAxis}
+                  data={sortedData}
+                  error={error}
+                  onApplySuggestion={applyChartSuggestion}
+                  columnOptions={columnOptions}
+                />
+                
+                {/* Aggregation Stats Panel - show when grouping is active */}
+                {groupBy && groupBy !== 'none' && (
+                  <div className="mt-4 border rounded-md p-4 bg-blue-50/40 dark:bg-blue-900/20">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <InformationCircleIcon className="h-4 w-4 text-blue-500" />
+                      Aggregation Statistics
+                    </h4>
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Method:</span>
+                        <span className="bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded">
+                          {aggregation.charAt(0).toUpperCase() + aggregation.slice(1)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Groups:</span>
+                        <span>{Object.keys(chartData.reduce((acc, item) => {
+                          const key = String(item[groupBy]);
+                          acc[key] = true;
+                          return acc;
+                        }, {} as Record<string, boolean>)).length}</span>
+                      </div>
+                      
+                      {(() => {
+                        // Calculate additional statistics based on the Y axis values
+                        const numericValues = sortedData
+                          .map(item => Number(item[yAxis]))
+                          .filter(val => !isNaN(val));
+                          
+                        if (numericValues.length === 0) return null;
+                        
+                        const sum = numericValues.reduce((acc, val) => acc + val, 0);
+                        const avg = sum / numericValues.length;
+                        const min = Math.min(...numericValues);
+                        const max = Math.max(...numericValues);
+                        const sorted = [...numericValues].sort((a, b) => a - b);
+                        const median = sorted.length % 2 === 0 
+                          ? (sorted[Math.floor(sorted.length / 2) - 1] + sorted[Math.floor(sorted.length / 2)]) / 2 
+                          : sorted[Math.floor(sorted.length / 2)];
+                          
+                        const formatValue = (val: number) => {
+                          if (Math.abs(val) >= 1000000) {
+                            return `${(val / 1000000).toFixed(2)}M`;
+                          } else if (Math.abs(val) >= 1000) {
+                            return `${(val / 1000).toFixed(2)}K`;
+                          } else if (Number.isInteger(val)) {
+                            return val.toString();
+                          } else {
+                            return val.toFixed(2);
+                          }
+                        };
+                        
+                        return (
+                          <>
+                            <div className="my-1 border-t dark:border-gray-700" />
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Raw Data Count:</span>
+                              <span>{numericValues.length.toLocaleString()}</span>
+                            </div>
+                            
+                            {/* Show different statistics based on the aggregation method */}
+                            {aggregation === 'sum' && (
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">Total Sum:</span>
+                                <span>{formatValue(sum)}</span>
+                              </div>
+                            )}
+                            
+                            {aggregation === 'avg' && (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Mean:</span>
+                                  <span>{formatValue(avg)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Standard Deviation:</span>
+                                  <span>{formatValue(
+                                    Math.sqrt(
+                                      numericValues.reduce((acc, val) => acc + Math.pow(val - avg, 2), 0) / numericValues.length
+                                    )
+                                  )}</span>
+                                </div>
+                              </>
+                            )}
+                            
+                            {aggregation === 'min' && (
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">Minimum:</span>
+                                <span>{formatValue(min)}</span>
+                              </div>
+                            )}
+                            
+                            {aggregation === 'max' && (
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">Maximum:</span>
+                                <span>{formatValue(max)}</span>
+                              </div>
+                            )}
+                            
+                            {aggregation === 'median' && (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Median:</span>
+                                  <span>{formatValue(median)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Quartile 1 (25%):</span>
+                                  <span>{formatValue(sorted[Math.floor(sorted.length * 0.25)])}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Quartile 3 (75%):</span>
+                                  <span>{formatValue(sorted[Math.floor(sorted.length * 0.75)])}</span>
+                                </div>
+                              </>
+                            )}
+                            
+                            <div className="my-1 border-t dark:border-gray-700" />
+                            
+                            {/* Always show these regardless of aggregation method */}
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Range:</span>
+                              <span>{formatValue(max - min)}</span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Data Quality:</span>
+                              <span className="text-green-600 dark:text-green-400">
+                                {(numericValues.length / sortedData.length * 100).toFixed(1)}% valid
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Chart rendering help */}
+                <div className="mt-4 border rounded-md p-4 bg-gray-50 dark:bg-gray-800">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <InformationCircleIcon className="h-4 w-4 text-primary" />
+                    Chart Debug Info
+                  </h4>
+                  
+                  <div className="space-y-2 text-xs">
+                    <p>
+                      <span className="font-medium">Chart Type:</span> {chartType}
+                    </p>
+                    <p>
+                      <span className="font-medium">X-Axis:</span> {xAxis} ({columns.find(c => c.name === xAxis)?.type || 'unknown'})
+                    </p>
+                    <p>
+                      <span className="font-medium">Y-Axis:</span> {yAxis} ({columns.find(c => c.name === yAxis)?.type || 'unknown'})
+                    </p>
+                    {groupBy && groupBy !== 'none' && (
+                      <p>
+                        <span className="font-medium">Aggregation:</span> {aggregation} of {yAxis} by {groupBy}
+                      </p>
+                    )}
+                    <p>
+                      <span className="font-medium">Data Points:</span> {chartData.length || pieData.length || 0}
+                    </p>
+                    {validationErrors.length > 0 && (
+                      <div className="mt-2">
+                        <p className="font-medium text-amber-600 dark:text-amber-400">Validation Issues:</p>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {validationErrors.map((err, idx) => (
+                            <li key={idx}>{err}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowGuidePanel(false)}
+                      className="w-full text-xs bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-2 rounded flex items-center justify-center gap-1"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                      Hide Guide Panel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
