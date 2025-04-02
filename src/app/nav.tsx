@@ -35,7 +35,8 @@ export default function Navigation() {
             <div className="ml-10 flex items-center space-x-4">
               {[
                 { name: 'Home', path: '/', icon: Home },
-                { name: 'Data Analyzer', path: '/analyze', icon: BarChart3 }
+                { name: 'Data Analyzer', path: '/analyze', icon: BarChart3 },
+                { name: 'Wizard Explorer', path: '/explorer-wizard', icon: BarChart3 }
               ].map((item) => {
                 const isActive = pathname === item.path;
                 const Icon = item.icon;
@@ -62,7 +63,8 @@ export default function Navigation() {
             <div className="flex items-center space-x-2">
               {[
                 { name: 'Home', path: '/', icon: Home },
-                { name: 'Data Analyzer', path: '/analyze', icon: BarChart3 }
+                { name: 'Data Analyzer', path: '/analyze', icon: BarChart3 },
+                { name: 'Wizard', path: '/explorer-wizard', icon: BarChart3 }
               ].map((item) => {
                 const isActive = pathname === item.path;
                 const Icon = item.icon;

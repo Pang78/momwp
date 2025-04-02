@@ -10,9 +10,8 @@ import savitzkyGolay from 'ml-savitzky-golay';
 // Types for our data analysis
 export interface DataColumn {
   name: string;
-  type: 'numeric' | 'categorical' | 'datetime' | 'unknown';
-  values: any[];
-  summary?: ColumnSummary;
+  type: string;
+  description?: string;
 }
 
 export interface ColumnSummary {
@@ -646,4 +645,94 @@ export const analyzeData = async (file: File): Promise<AnalysisResult> => {
     console.error('Error analyzing data:', error);
     throw error;
   }
-}; 
+};
+
+export function inferColumnTypes(data: any[]): DataColumn[] {
+  if (!data || !data.length) return [];
+
+  const columns: DataColumn[] = [];
+  const firstRow = data[0];
+
+  for (const key in firstRow) {
+    if (Object.prototype.hasOwnProperty.call(firstRow, key)) {
+      const value = firstRow[key];
+      let type = 'string';
+
+      if (typeof value === 'number') {
+        type = 'numeric';
+      } else if (typeof value === 'boolean') {
+        type = 'boolean';
+      } else if (value instanceof Date) {
+        type = 'date';
+      } else if (Array.isArray(value)) {
+        type = 'array';
+      } else if (typeof value === 'object' && value !== null) {
+        type = 'object';
+      }
+
+      columns.push({
+        name: key,
+        type
+      });
+    }
+  }
+
+  return columns;
+}
+
+export function formatNumber(value: number): string {
+  if (Math.abs(value) >= 1000000) {
+    return `${(value / 1000000).toFixed(1)}M`;
+  }
+  if (Math.abs(value) >= 1000) {
+    return `${(value / 1000).toFixed(1)}K`;
+  }
+  return value.toString();
+}
+
+export function calculateStatistics(data: any[], column: string) {
+  const values = data
+    .map(item => item[column])
+    .filter(val => typeof val === 'number' && !isNaN(val));
+  
+  if (values.length === 0) return null;
+  
+  // Sort values for median and percentiles
+  values.sort((a, b) => a - b);
+  
+  const sum = values.reduce((acc, val) => acc + val, 0);
+  const mean = sum / values.length;
+  
+  // Calculate median
+  const mid = Math.floor(values.length / 2);
+  const median = values.length % 2 === 0
+    ? (values[mid - 1] + values[mid]) / 2
+    : values[mid];
+  
+  // Calculate standard deviation
+  const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+  const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / values.length;
+  const stdDev = Math.sqrt(variance);
+  
+  // Calculate min, max
+  const min = values[0];
+  const max = values[values.length - 1];
+  
+  // Calculate quartiles
+  const q1Index = Math.floor(values.length * 0.25);
+  const q3Index = Math.floor(values.length * 0.75);
+  const q1 = values[q1Index];
+  const q3 = values[q3Index];
+  
+  return {
+    count: values.length,
+    mean,
+    median,
+    stdDev,
+    min,
+    max,
+    q1,
+    q3,
+    sum
+  };
+} 

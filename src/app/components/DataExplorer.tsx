@@ -38,21 +38,25 @@ import {
   SelectValue
 } from "@/components/ui/select";
 
-// Import from recharts - commenting out unused imports
+// @ts-expect-error - Recharts types are properly available at runtime
 import {
-  // BarChart,
-  // Bar,
-  // LineChart,
-  // Line,
-  // PieChart,
-  // Pie,
-  // CartesianGrid,
-  // XAxis,
-  // YAxis,
-  // Tooltip as RechartsTooltip,
-  // Legend,
-  // ResponsiveContainer,
-  // Cell,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+  ScatterChart,
+  Scatter,
+  ReferenceArea,
+  Brush
 } from 'recharts';
 // Import these components directly and handle them separately in the component
 // TypeScript will ignore missing exports with typeof, but we'll manage their usage
@@ -867,16 +871,231 @@ export default function DataExplorer({
             )}
             <div className="w-full h-full">
               {chartData.length > 0 && (
-                <div id="chart-container" className="w-full h-full">
-                  {/* The actual chart would be rendered here by recharts */}
-                  {/* We're skipping the recharts JSX to avoid TypeScript errors */}
-                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                  >
+                    {chartSettings.showGrid && (
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    )}
+                    <XAxis 
+                      dataKey={xAxis} 
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                    />
+                    <RechartsTooltip
+                      formatter={(value, name) => [formatTooltipValue(value), name]}
+                      contentStyle={{ 
+                        borderRadius: '4px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                      }}
+                    />
+                    {chartSettings.showLegend && (
+                      <Legend 
+                        verticalAlign="top" 
+                        height={36}
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                      />
+                    )}
+                    <Bar 
+                      dataKey={yAxis} 
+                      name={yAxis}
+                      fill={COLOR_SCHEMES[activeColorScheme][0]} 
+                      isAnimationActive={chartSettings.enableAnimation}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'line':
+        return (
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+            {chartSettings.enableZoom && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="absolute top-2 right-2 z-10"
+                onClick={handleResetZoom}
+                aria-label="Reset zoom"
+              >
+                <ArrowsPointingOutIcon className="h-4 w-4" />
+              </Button>
+            )}
+            <div className="w-full h-full">
+              {chartData.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                  >
+                    {chartSettings.showGrid && (
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    )}
+                    <XAxis 
+                      dataKey={xAxis} 
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                    />
+                    <RechartsTooltip
+                      formatter={(value, name) => [formatTooltipValue(value), name]}
+                      contentStyle={{ 
+                        borderRadius: '4px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                      }}
+                    />
+                    {chartSettings.showLegend && (
+                      <Legend 
+                        verticalAlign="top" 
+                        height={36}
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                      />
+                    )}
+                    <Line 
+                      type="monotone"
+                      dataKey={yAxis} 
+                      name={yAxis}
+                      stroke={COLOR_SCHEMES[activeColorScheme][0]} 
+                      isAnimationActive={chartSettings.enableAnimation}
+                      dot={{ fill: COLOR_SCHEMES[activeColorScheme][0] }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               )}
             </div>
           </div>
         );
         
-      // ... other chart types would follow, but I'll keep it focused for now
+      case 'scatter':
+        return (
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+            {chartSettings.enableZoom && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="absolute top-2 right-2 z-10"
+                onClick={handleResetZoom}
+                aria-label="Reset zoom"
+              >
+                <ArrowsPointingOutIcon className="h-4 w-4" />
+              </Button>
+            )}
+            <div className="w-full h-full">
+              {chartData.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart
+                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                  >
+                    {chartSettings.showGrid && (
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    )}
+                    <XAxis 
+                      dataKey={xAxis} 
+                      name={xAxis}
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                      type="number"
+                    />
+                    <YAxis 
+                      dataKey={yAxis}
+                      name={yAxis}
+                      tick={{ fill: '#666', fontSize: 12 }}
+                      tickLine={{ stroke: '#ccc' }}
+                      axisLine={{ stroke: '#ccc' }}
+                      type="number"
+                    />
+                    <RechartsTooltip
+                      formatter={(value, name) => [formatTooltipValue(value), name]}
+                      contentStyle={{ 
+                        borderRadius: '4px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                      }}
+                      cursor={{ strokeDasharray: '3 3' }}
+                    />
+                    {chartSettings.showLegend && (
+                      <Legend 
+                        verticalAlign="top" 
+                        height={36}
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                      />
+                    )}
+                    <Scatter 
+                      name={`${xAxis} vs ${yAxis}`}
+                      data={chartData}
+                      fill={COLOR_SCHEMES[activeColorScheme][0]}
+                      isAnimationActive={chartSettings.enableAnimation}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        );
+        
+      case 'pie':
+        const colors = COLOR_SCHEMES[activeColorScheme];
+        return (
+          <div className="w-full h-[400px] border rounded-md p-2 bg-white dark:bg-gray-800 relative" ref={chartContainerRef}>
+            <div className="w-full h-full">
+              {pieData.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={130}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      labelLine={true}
+                      isAnimationActive={chartSettings.enableAnimation}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      formatter={(value, name, props) => [formatTooltipValue(value), props.payload.name]}
+                      contentStyle={{ 
+                        borderRadius: '4px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                      }}
+                    />
+                    {chartSettings.showLegend && (
+                      <Legend 
+                        layout="vertical"
+                        align="right"
+                        verticalAlign="middle"
+                        wrapperStyle={{ fontSize: '12px', paddingLeft: '10px' }}
+                      />
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        );
       
       default:
         return (
